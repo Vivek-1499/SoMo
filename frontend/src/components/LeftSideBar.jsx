@@ -23,7 +23,7 @@ const sidebarItems = [
     icon: (
       <Avatar className="h-6 w-6">
         <AvatarImage src="https://github.com/shadcn.png" />
-        <AvatarFallback>CN</AvatarFallback>
+        <AvatarFallback>DP</AvatarFallback>
       </Avatar>
     ),
     text: "Profile",
@@ -47,9 +47,10 @@ const LeftSideBar = () => {
       toast.error(error.response.data.message);
     }
   };
-  const sidebarHandler = (textType)=>{
-    alert(textType)
-  }
+
+  const sidebarHandler = (textType) => {
+    if(textType === 'Logout') logoutHandler();
+  };
   return (
     <>
       {/* Sidebar on tablet and desktop */}
@@ -64,13 +65,13 @@ const LeftSideBar = () => {
         <h1 className="text-xl font-bold mb-8 px-4 hidden md:block">LOGO</h1>
         {sidebarItems.map((item, index) => (
           <button
-          onClick={() => sidebarHandler(item.text)}
+            onClick={() => sidebarHandler(item.text)}
             key={index}
             className="flex items-center space-x-3 w-full py-4 px-4 rounded-lg
               text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800
               transition-colors duration-200"
           >
-            <div className="w-6 h-6">{item.icon}</div>
+            <h1 className="w-6 h-6">{item.icon}</h1>
             <span className="hidden md:inline text-sm font-medium">
               {item.text}
             </span>
@@ -78,9 +79,9 @@ const LeftSideBar = () => {
         ))}
       </nav>
 
-      {/* Bottom navigation on small screens */}
+      {/* phones */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 w-full h-16
+        className="md:hidden fixed bottom-0 left-0 w-full h-14
           bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700
           flex justify-around items-center z-20"
       >
@@ -88,12 +89,11 @@ const LeftSideBar = () => {
           .filter((item) => item.showOnMobile)
           .map((item, index) => (
             <button
-            onClick={() => sidebarHandler(item.text)}
+              onClick={() => sidebarHandler(item.text)}
               key={index}
-              className="flex flex-col items-center justify-center text-xs text-gray-600 dark:text-gray-300"
+              className="flex items-center justify-center text-xs text-gray-600 dark:text-gray-300"
             >
-              <div className="w-6 h-6">{item.icon}</div>
-              <span className="text-[10px] mt-1">{item.text}</span>
+              <div className="w-15 h-15">{item.icon}</div>
             </button>
           ))}
       </nav>
