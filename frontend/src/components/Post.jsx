@@ -6,7 +6,7 @@ import { Button } from "./ui/button";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 import CommentDialog from "./CommentDialog";
 
-const Post = () => {
+const Post = ({post}) => {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const changeEventHandler = (e) => {
@@ -20,11 +20,11 @@ const Post = () => {
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-3">
           <Avatar className="bg-slate-200">
-            <AvatarImage src="" alt="post-image" />
+            <AvatarImage src={post.author?.profilePicture} alt="post-image"  className="object-cover"/>
             <AvatarFallback>U</AvatarFallback>
           </Avatar>
           <h1 className="font-medium text-gray-800 dark:text-gray-200">
-            username
+            {post.author.username}
           </h1>
         </div>
         <Dialog>
@@ -52,10 +52,11 @@ const Post = () => {
       </div>
 
       <img
-        className="rounded-md my-2 w-full aspect-auto object-cover"
-        src="https://images.unsplash.com/photo-1749482843703-3895960e7d63?q=80&w=1936&auto=format&fit=crop"
-        alt="post_img"
-      />
+  className="rounded-md my-2 w-full h-[450px] object-contain bg-gray-50 dark:bg-gray-800"
+  src={post.image}
+  alt="post_img"
+/>
+
 
       <div className="flex items-center justify-between my-2 text-gray-600 dark:text-gray-300">
         <div className="flex items-center gap-4">
@@ -73,14 +74,14 @@ const Post = () => {
       </div>
 
       <span className="font-medium block text-gray-800 dark:text-gray-200 mb-1">
-        1k likes
+        {post.likes.length} likes
       </span>
 
       <p className="text-sm text-gray-800 dark:text-gray-300 mb-1">
         <span className="font-semibold mr-2 text-gray-900 dark:text-white">
-          username
+          {post.author?.username}
         </span>
-        caption
+        {post.caption}
       </p>
 
       <span onClick = {()=> setOpen(true)}className="text-sm text-gray-500 dark:text-gray-400 cursor-pointer">

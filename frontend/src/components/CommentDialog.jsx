@@ -4,9 +4,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Link } from "react-router-dom";
 import { MoreHorizontal } from "lucide-react";
 import { Button } from "./ui/button";
+import { useSelector } from "react-redux";
 
 const CommentDialog = ({ open, setOpen }) => {
   const [text, setText] = useState("");
+  const {user} = useSelector(store => store.auth)
   const changeEventHandler = (e) =>{
     const inputText = e.target.value;
     if(inputText.trim()){
@@ -47,13 +49,13 @@ const CommentDialog = ({ open, setOpen }) => {
             <div className="flex gap-3 items-center">
               <Link>
                 <Avatar>
-                  <AvatarImage src="" />
+                  <AvatarImage src={user?.profilePicture} className='object-cover'/>
                   <AvatarFallback>CN</AvatarFallback>
                 </Avatar>
               </Link>
               <div>
                 <Link className="font-semibold text-sm hover:underline">
-                  username
+                  {user?.username}
                 </Link>
               </div>
             </div>

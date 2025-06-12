@@ -2,11 +2,14 @@ import axios from "axios";
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setAuthUser } from "@/redux/authSlice";
 
 const Login = () => {
   const [input, setInput] = useState({ identifier: "", password: "" });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleChange = (e) =>
     setInput({ ...input, [e.target.name]: e.target.value });
@@ -24,6 +27,7 @@ const Login = () => {
         }
       );
       if (res.data.success) {
+        dispatch(setAuthUser(res.data.user))
         toast.success(res.data.message);
         navigate("/");
       }
