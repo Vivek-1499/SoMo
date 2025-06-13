@@ -5,17 +5,16 @@ import RightSideBar from "./RightSideBar";
 import useGetAllPost from "@/hooks/useGetAllPosts";
 
 const Home = () => {
-  useGetAllPost()
+  useGetAllPost();
   return (
     <>
-    <div className="bg-white text-black dark:bg-gray-950 dark:text-white">
-
-      <div className="flex-grow">
-        <Feed />
-        <Outlet />
+      <div className="bg-white text-black dark:bg-gray-950 dark:text-white">
+        <div className="flex-grow">
+          <Feed />
+          <Outlet />
+        </div>
+        <RightSideBar />
       </div>
-      <RightSideBar />
-    </div>
     </>
   );
 };

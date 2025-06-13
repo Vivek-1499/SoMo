@@ -9,6 +9,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
 import axios from "axios";
 import { setPosts } from "@/redux/postSlice";
+import Cropper from "react-easy-crop";
+import getCroppedImg from "./utils/getCroppedImage";
+import { ImEmbed } from "react-icons/im";
 
 const CreatePost = ({ open, setOpen }) => {
   const { user } = useSelector((store) => store.auth);
@@ -19,7 +22,17 @@ const CreatePost = ({ open, setOpen }) => {
   const [loading, setLoading] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const dispatch = useDispatch();
-  const {posts} = useSelector(store => store.post)
+  const { posts } = useSelector((store) => store.post);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [objectFit, setObjectFit] = useState("contain");
+  const [manualAspect, setManualAspect] = useState(false); // manual toggle
+
+  // Callback
+  const onCropComplete = (_, croppedPixels) => {
+    setCroppedAreaPixels(croppedPixels);
+  };
 
   // Delayed reset to avoid aria-hidden + focus conflict
   useEffect(() => {
@@ -33,12 +46,30 @@ const CreatePost = ({ open, setOpen }) => {
     }
   }, [open]);
 
+  const [aspect, setAspect] = useState(4 / 5); // default for portrait
+  const computedAspect = manualAspect
+    ? aspect === 4 / 5
+      ? 16 / 9
+      : 4 / 5
+    : aspect;
+
   const fileChangeHandler = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
       setFile(file);
       const dataUrl = await readFileAsDataURL(file);
+      const img = new Image();
+      img.src = dataUrl;
+      img.onload = () => {
+        const ratio = img.width / img.height;
+        if (ratio > 1.3) {
+          setAspect(16 / 9); // cinematic
+        } else {
+          setAspect(4 / 5); // portrait default
+        }
+      };
       setImage(dataUrl);
+      setManualAspect(false);
     }
   };
 
@@ -55,12 +86,13 @@ const CreatePost = ({ open, setOpen }) => {
   };
 
   const handleSubmit = async () => {
-    const formData = new FormData();
-    formData.append("caption", caption);
-    if (image) formData.append("image", file);
-
     try {
       setLoading(true);
+      let croppedBlob = await getCroppedImg(image, croppedAreaPixels);
+      const formData = new FormData();
+      formData.append("caption", caption);
+      formData.append("image", croppedBlob, file.name);
+
       const res = await axios.post(
         "http://localhost:8000/api/v2/post/addpost",
         formData,
@@ -71,7 +103,7 @@ const CreatePost = ({ open, setOpen }) => {
       );
 
       if (res.data.success) {
-        dispatch(setPosts([...posts, res.data.post]))  // adds posts
+        dispatch(setPosts([res.data.post, ...posts]));
         toast.success(res.data.message);
         setFile({ ...file, posted: true });
         setOpen(false);
@@ -85,13 +117,14 @@ const CreatePost = ({ open, setOpen }) => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="bg-white dark:bg-zinc-900 rounded-xl max-w-md w-full sm:max-w-lg p-4 space-y-4">
+      <DialogContent className="bg-white dark:bg-zinc-900 rounded-xl max-w-md w-full sm:max-w-lg p-4 max-h-[90vh] overflow-y-auto flex flex-col space-y-4">
         <DialogHeader className="text-center font-semibold text-gray-900 dark:text-white">
           Create New Post
         </DialogHeader>
 
+        {/* User Info */}
         <div className="flex gap-3 items-center">
-          <Avatar className="h-6 w-6">
+          <Avatar className="h-8 w-8">
             <AvatarImage src={user?.profilePicture} className="object-cover" />
             <AvatarFallback className="bg-gray-200">U</AvatarFallback>
           </Avatar>
@@ -105,6 +138,7 @@ const CreatePost = ({ open, setOpen }) => {
           </div>
         </div>
 
+        {/* Caption */}
         <Textarea
           placeholder="Write a caption..."
           className="focus-visible:ring-transparent border border-gray-300 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 text-black dark:text-white"
@@ -113,15 +147,35 @@ const CreatePost = ({ open, setOpen }) => {
         />
 
         {image && (
-          <div className="w-full max-h-64 overflow-hidden rounded-lg border dark:border-zinc-700">
-            <img
-              src={image}
-              alt="preview"
-              className="object-contain w-full h-full"
+          <div className="relative w-full aspect-video sm:aspect-[4/5] bg-gray-100 dark:bg-zinc-800 rounded-lg overflow-hidden max-h-[60vh] min-h-[300px]">
+            <Cropper
+              image={image}
+              crop={crop}
+              zoom={zoom}
+              aspect={computedAspect}
+              cropShape="rect"
+              showGrid={false}
+              objectFit="contain"
+              onCropChange={setCrop}
+              onZoomChange={setZoom}
+              onCropComplete={onCropComplete}
             />
+
+            {/* Overlay info + toggle */}
+            <div className="absolute bottom-2 right-2 z-10 flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setManualAspect(true);
+                  setAspect((prev) => (prev === 4 / 5 ? 16 / 9 : 4 / 5));
+                }}
+                className="text-xs underline text-blue-600 dark:text-blue-400 no-underline py-1 px-2 bg-blue-200 rounded-sm ">
+                <ImEmbed />
+              </button>
+            </div>
           </div>
         )}
 
+        {/* File Input */}
         <Input
           ref={imageRef}
           type="file"
@@ -130,31 +184,35 @@ const CreatePost = ({ open, setOpen }) => {
           onChange={fileChangeHandler}
         />
 
+        {/* Unsaved Warning */}
         {showWarning && (
           <div className="text-sm text-red-500 text-center">
             You have unsaved changes.{" "}
             <button
               onClick={discardChanges}
-              className="underline underline-offset-2 text-red-700 hover:text-red-600"
-            >
+              className="underline underline-offset-2 text-red-700 hover:text-red-600">
               Discard
             </button>{" "}
             or continue editing.
           </div>
         )}
 
-        <div className="flex justify-center">
+        {/* Post Button */}
+        <div className="mt-2">
           <Button
             type="button"
             disabled={loading}
             onClick={image ? handleSubmit : () => imageRef.current.click()}
-            className={`w-full sm:w-auto ${
+            className={`w-full ${
               image
-                ? "bg-blue-600 hover:bg-blue-500"
+                ? "bg-blue-600 hover:bg-blue-500 text-white"
                 : "bg-gray-950 dark:bg-white dark:text-black text-white hover:bg-gray-800 dark:hover:bg-gray-200"
-            }`}
-          >
-            {loading ? "Posting..." : image ? "Post" : "Choose from Computer/Phone"}
+            }`}>
+            {loading
+              ? "Posting..."
+              : image
+              ? "Post"
+              : "Choose from Computer/Phone"}
           </Button>
         </div>
       </DialogContent>
