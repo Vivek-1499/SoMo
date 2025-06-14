@@ -168,7 +168,7 @@ const CreatePost = ({ open, setOpen }) => {
                   setManualAspect(true);
                   setAspect((prev) => (prev === 4 / 5 ? 16 / 9 : 4 / 5));
                 }}
-                className="text-xs underline text-blue-600 dark:text-blue-400 no-underline py-1 px-2 bg-blue-200 rounded-sm ">
+                className="text-xs text-blue-600 dark:text-blue-400 no-underline py-1 px-2 bg-blue-200 rounded-sm ">
                 <ImEmbed />
               </button>
             </div>
