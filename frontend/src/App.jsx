@@ -18,7 +18,7 @@ const browserRouter = createBrowserRouter([
         element: <Home />,
       },
       {
-        path: "/Profile",
+        path: "/profile/:id",
         element: <Profile />,
       },
     ],
@@ -31,12 +31,6 @@ const browserRouter = createBrowserRouter([
 function App() {
   return (
     <>
-      <button
-        onClick={() => document.documentElement.classList.toggle("dark")}
-        className="absolute top-4 right-4 px-4 py-2 bg-black text-white dark:bg-white dark:text-black rounded">
-        Toggle Mode
-      </button>
-
       <RouterProvider router={browserRouter} />
     </>
   );

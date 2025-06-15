@@ -3,9 +3,11 @@ import Feed from "./Feed";
 import { Outlet } from "react-router-dom";
 import RightSideBar from "./RightSideBar";
 import useGetAllPost from "@/hooks/useGetAllPosts";
+import useGetSuggestedUsers from "@/hooks/useGetSuggestedUsers";
 
 const Home = () => {
   useGetAllPost();
+  useGetSuggestedUsers();
   return (
     <>
       <div className="bg-white text-black dark:bg-gray-950 dark:text-white">
