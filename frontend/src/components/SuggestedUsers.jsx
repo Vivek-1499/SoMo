@@ -43,7 +43,7 @@ const SuggestedUsers = () => {
             </Link>
 
             <button
-              className="text-xs font-medium px-3 py-1 bg-blue-600 text-white rounded-full hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition"
+              className="text-xs font-medium px-3 py-1 bg-purple-300 text-black rounded-full hover:bg-purple-400 dark:bg-purple-700 dark:hover:bg-purple-800 transition"
               onClick={(e) => {
                 e.preventDefault();
                 // Trigger follow action here

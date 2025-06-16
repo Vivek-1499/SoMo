@@ -1,6 +1,6 @@
 import { User } from "../models/user.model.js";
 import bcrypt from "bcrypt";
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 import getDataUri from "../utils/datauri.js";
 import cloudinary from "../utils/cloudinary.js";
 import { Post } from "../models/post.model.js";
@@ -48,40 +48,46 @@ export const register = async (req, res) => {
   }
 };
 
-export const login = async (req, res) =>{
+export const login = async (req, res) => {
   try {
-    const {identifier, password} = req.body || {};
+    const { identifier, password } = req.body || {};
     if (!identifier || !password) {
       return res.status(400).json({
         message: `All fields required(username, email, password)`,
         success: false,
       });
     }
-    let user = await User.findOne({ $or: [{ email: identifier }, { username: identifier }] });
-    if(!user){
+    let user = await User.findOne({
+      $or: [{ email: identifier }, { username: identifier }],
+    });
+    if (!user) {
       return res.status(400).json({
-        message: 'Incorrect email/username password',
+        message: "Incorrect email/username password",
         success: false,
       });
     }
     const isPasswordMatch = await bcrypt.compare(password, user.password);
-    if(!isPasswordMatch){
+    if (!isPasswordMatch) {
       return res.status(400).json({
-        message: 'Incorrect password',
+        message: "Incorrect password",
         success: false,
       });
     }
 
-    const token = jwt.sign({userId: user._id, username: user.username}, process.env.SECRET_KEY, {expiresIn: '1d'});
+    const token = jwt.sign(
+      { userId: user._id, username: user.username },
+      process.env.SECRET_KEY,
+      { expiresIn: "1d" }
+    );
     const populatedPosts = await Promise.all(
-  user.posts.map(async (postId) => {
-    const post = await Post.findById(postId);
-    if (post && post.author && post.author.equals(user._id)) {
-      return post;
-    }
-    return null;
-  })
-).then(posts => posts.filter(Boolean));
+      user.posts.map(async (postId) => {
+        const post = await Post.findById(postId);
+        if (post && post.author && post.author.equals(user._id)) {
+          return post;
+        }
+        return null;
+      })
+    ).then((posts) => posts.filter(Boolean));
 
     user = {
       _id: user._id,
@@ -94,101 +100,118 @@ export const login = async (req, res) =>{
       posts: user.posts,
       bookmarks: user.bookmarks,
       silentFollowing: user.silentFollowing,
-      gender: user.gender
-    }
-    if (!process.env.SECRET_KEY) throw new Error('SECRET_KEY is not defined in .env');
-    return res.cookie('token', token, {httpOnly:true, sameSite: 'strict', maxAge: 1*24*60*60*1000}).json({
-      message: `Welcome back ${user.username}`,
-      success: true,
-      user
-    })
+      gender: user.gender,
+    };
+    if (!process.env.SECRET_KEY)
+      throw new Error("SECRET_KEY is not defined in .env");
+    return res
+      .cookie("token", token, {
+        httpOnly: true,
+        sameSite: "strict",
+        maxAge: 1 * 24 * 60 * 60 * 1000,
+      })
+      .json({
+        message: `Welcome back ${user.username}`,
+        success: true,
+        user,
+      });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
       message: "Internal server issue",
-      success: false
-    })
+      success: false,
+    });
   }
-}
+};
 
-export const logout = async(_, res)=>{
+export const logout = async (_, res) => {
   try {
-    return res.cookie('token','', {maxAge: 0}).json({
-      message: 'Logged out successfully',
-      success: true
-    })
-  } catch (error) {
-    console.log(error)
-  }
-}
-
-export const getProfile = async(req, res) =>{
-  try {
-    const userId = req.params.id;
-    let user = await User.findById(userId).select("-password");
-    return res.status(200).json({
-      user,
-      success: true
-    })
+    return res.cookie("token", "", { maxAge: 0 }).json({
+      message: "Logged out successfully",
+      success: true,
+    });
   } catch (error) {
     console.log(error);
   }
-}
+};
 
-export const editProfile = async(req, res)=>{
+export const getProfile = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    let user = await User.findById(userId)
+      .populate({
+        path: "posts",
+        options: { sort: { createdAt: -1 } },
+      })
+      .populate({
+        path: "bookmarks",
+        options: { sort: { createdAt: -1 } },
+      });
+    return res.status(200).json({
+      user,
+      success: true,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const editProfile = async (req, res) => {
   try {
     const userId = req.id;
-    const {bio, gender} = req.body;
+    const { bio, gender } = req.body;
     const profilePicture = req.file;
     let cloudResponse;
 
-    if(profilePicture){
+    if (profilePicture) {
       console.log("Uploading picture:", profilePicture.originalname);
       console.log("Buffer size:", profilePicture.buffer?.length);
       const fileUri = getDataUri(profilePicture);
       console.log("File URI starts with:", fileUri?.slice(0, 30));
-      cloudResponse = await cloudinary.uploader.upload(fileUri)
+      cloudResponse = await cloudinary.uploader.upload(fileUri);
     }
 
     const user = await User.findById(userId).select("-password");
-    if(!user){
+    if (!user) {
       return res.status(404).json({
-        message:'User not found',
-        success: false
-      })
-    };
-    if(bio) user.bio = bio;
-    if(gender) user.gender = gender;
-    if(profilePicture) user.profilePicture = cloudResponse.secure_url;
+        message: "User not found",
+        success: false,
+      });
+    }
+    if (bio) user.bio = bio;
+    if (gender) user.gender = gender;
+    if (profilePicture) user.profilePicture = cloudResponse.secure_url;
 
-    await user.save();  //saves in database
+    await user.save(); //saves in database
 
     return res.status(200).json({
       message: "Profile Updates",
       success: true,
-      user
-    })
+      user,
+    });
   } catch (error) {
     console.log(error);
   }
-}
+};
 
-export const getSuggestedUsers = async(req, res) =>{
+export const getSuggestedUsers = async (req, res) => {
   try {
-    const suggestedUsers = await User.find({_id: {$ne: req.id}}).select("-password")
-    if(!suggestedUsers){
+    const suggestedUsers = await User.find({ _id: { $ne: req.id } }).select(
+      "-password"
+    );
+    if (!suggestedUsers) {
       return res.status(400).json({
-        message: "Currently do not have any users"
-      })
+        message: "Currently do not have any users",
+      });
     }
     return res.status(200).json({
       success: true,
-      users: suggestedUsers
-    })
+      users: suggestedUsers,
+    });
   } catch (error) {
-    console.log(error)
+    console.log(error);
   }
-}
+};
 
 export const followUnfollowUser = async (req, res) => {
   const currentUserId = req.id;
@@ -198,7 +221,7 @@ export const followUnfollowUser = async (req, res) => {
   if (currentUserId === targetUserId) {
     return res.status(400).json({
       message: "You cannot follow yourself",
-      success: false
+      success: false,
     });
   }
 
@@ -209,47 +232,52 @@ export const followUnfollowUser = async (req, res) => {
     if (!currentUser || !targetUser) {
       return res.status(404).json({
         message: "User not found",
-        success: false
+        success: false,
       });
     }
 
     const isFollowing = currentUser.following.includes(targetUserId);
-    const isSilentFollowing = currentUser.silentFollowing.includes(targetUserId);
+    const isSilentFollowing =
+      currentUser.silentFollowing.includes(targetUserId);
 
     if (isFollowing) {
       await Promise.all([
-        currentUser.updateOne({$pull: {following: targetUserId,silentFollowing: targetUserId} }),
-        targetUser.updateOne({$pull: { followers: currentUserId } })
+        currentUser.updateOne({
+          $pull: { following: targetUserId, silentFollowing: targetUserId },
+        }),
+        targetUser.updateOne({ $pull: { followers: currentUserId } }),
       ]);
 
       return res.status(200).json({
         message: `Unfollowed ${targetUser.username}`,
-        success: true
+        success: true,
       });
     } else {
       const updatePromises = [
         currentUser.updateOne({ $push: { following: targetUserId } }),
-        targetUser.updateOne({ $push: { followers: currentUserId } })
+        targetUser.updateOne({ $push: { followers: currentUserId } }),
       ];
 
       if (silent && !isSilentFollowing) {
         updatePromises.push(
-          currentUser.updateOne({ $push: { silentFollowing: targetUserId } }),
+          currentUser.updateOne({ $push: { silentFollowing: targetUserId } })
         );
       }
 
       await Promise.all(updatePromises);
 
       return res.status(200).json({
-        message: `Now following ${targetUser.username}${silent ? " silently" : ""}`,
-        success: true
+        message: `Now following ${targetUser.username}${
+          silent ? " silently" : ""
+        }`,
+        success: true,
       });
     }
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       message: "Internal server error",
-      success: false
+      success: false,
     });
   }
 };

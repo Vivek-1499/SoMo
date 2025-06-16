@@ -23,6 +23,8 @@ const LeftSideBar = () => {
   const dispatch = useDispatch();
   const [open, setOpen] = useState(false);
   const [showMoreDialog, setShowMoreDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState("Home");
+  
   const [isDarkMode, setIsDarkMode] = useState(() =>
     document.documentElement.classList.contains("dark")
   );
@@ -49,6 +51,7 @@ const LeftSideBar = () => {
   };
 
   const sidebarHandler = (textType) => {
+    setActiveTab(textType);
     if (textType === "Home") navigate("/");
     if (textType === "Create") setOpen(true);
     if (textType === "More") setShowMoreDialog(true);
@@ -91,7 +94,11 @@ const LeftSideBar = () => {
                 <button
                   onClick={() => sidebarHandler(item.text)}
                   key={index}
-                  className="flex items-center space-x-3 w-full py-2 px-4 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                  className={`flex items-center space-x-3 w-full py-2 px-4 rounded-lg transition
+  ${activeTab === item.text
+    ? "bg-gray-200 dark:bg-gray-700 text-black dark:text-white font-semibold"
+    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+  }`}>
                   <div className="w-6 h-6">{item.icon}</div>
                   <span className="hidden md:inline text-sm font-medium">
                     {item.text}
@@ -124,7 +131,11 @@ const LeftSideBar = () => {
             <button
               onClick={() => sidebarHandler(item.text)}
               key={index}
-              className="flex items-center justify-center text-xs text-gray-600 dark:text-gray-300">
+              className={`flex items-center justify-center text-xs
+  ${activeTab === item.text
+    ? "text-black dark:text-white font-bold"
+    : "text-gray-600 dark:text-gray-300"
+  }`}>
               <div className="w-6 h-6">{item.icon}</div>
             </button>
           ))}

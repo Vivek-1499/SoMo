@@ -10,7 +10,7 @@ const Home = () => {
   useGetSuggestedUsers();
   return (
     <>
-      <div className="bg-white text-black dark:bg-gray-950 dark:text-white">
+      <div className="bg-purple-50 text-black dark:bg-gray-950 dark:text-white">
         <div className="flex-grow">
           <Feed />
           <Outlet />

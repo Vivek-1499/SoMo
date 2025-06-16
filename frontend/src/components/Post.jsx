@@ -13,25 +13,19 @@ import { setPosts, setSelectedPost } from "@/redux/postSlice";
 const Post = ({ post }) => {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
-
   const { user } = useSelector((store) => store.auth);
   const { posts } = useSelector((store) => store.post);
-
-  // Local state tracking likes and comments
   const [liked, setLiked] = useState(post.likes.includes(user?._id));
   const [comment, setComment] = useState(post.comments);
   const [postLike, setPostLike] = useState(post.likes.length);
   const [loading, setLoading] = useState(false);
 
   const dispatch = useDispatch();
-
-  // Handles comment text input
   const changeEventHandler = (e) => {
     const inputText = e.target.value;
     setText(inputText.trim() ? inputText : "");
   };
 
-  // Deletes a post and updates state
   const deletePostHandler = async () => {
     try {
       const res = await axios.delete(
@@ -50,7 +44,6 @@ const Post = ({ post }) => {
     }
   };
 
-  // Likes or unlikes the post and updates the like count
   const likeDislike = async () => {
     if (loading) return;
     setLoading(true);
@@ -66,7 +59,6 @@ const Post = ({ post }) => {
         setPostLike(updatedLike);
         setLiked(!liked);
 
-        // Fix: use === instead of = in map condition
         const updatedPosts = posts.map((p) =>
           p._id === post._id
             ? {
@@ -131,7 +123,6 @@ const Post = ({ post }) => {
           </h1>
         </div>
 
-        {/* Options Dialog */}
         <Dialog>
           <DialogTrigger asChild>
             <MoreHorizontal className="cursor-pointer text-gray-500 hover:text-gray-800 dark:hover:text-white" />
@@ -196,8 +187,6 @@ const Post = ({ post }) => {
       </span>
       }
 
-
-      
       <CommentDialog open={open} setOpen={setOpen} post={post} />
 
       {/* Comment Input */}
