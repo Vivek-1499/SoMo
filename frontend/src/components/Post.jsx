@@ -115,7 +115,10 @@ const Post = ({ post }) => {
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-3">
           <Avatar className="bg-slate-200 w-9 h-9">
-            <AvatarImage src={post.author?.profilePicture} className="object-cover" />
+            <AvatarImage
+              src={post.author?.profilePicture}
+              className="object-cover"
+            />
             <AvatarFallback>U</AvatarFallback>
           </Avatar>
           <h1 className="text-sm font-medium text-gray-800 dark:text-gray-200">
@@ -128,10 +131,17 @@ const Post = ({ post }) => {
             <MoreHorizontal className="cursor-pointer text-gray-500 hover:text-gray-800 dark:hover:text-white" />
           </DialogTrigger>
           <DialogContent className="bg-white dark:bg-zinc-900 rounded-xl w-full sm:max-w-lg p-4 space-y-4 max-h-[90vh] overflow-y-auto">
-            <Button variant="ghost" className="text-red-500">Unfollow</Button>
-            <Button variant="ghost" className="dark:text-gray-300">Add to Favourite</Button>
+            <Button variant="ghost" className="text-red-500">
+              Unfollow
+            </Button>
+            <Button variant="ghost" className="dark:text-gray-300">
+              Add to Favourite
+            </Button>
             {user && user._id === post.author._id && (
-              <Button onClick={deletePostHandler} variant="ghost" className="text-red-500">
+              <Button
+                onClick={deletePostHandler}
+                variant="ghost"
+                className="text-red-500">
                 Delete
               </Button>
             )}
@@ -141,20 +151,34 @@ const Post = ({ post }) => {
 
       {/* Caption */}
       {post.caption && (
-        <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">{post.caption}</p>
+        <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+          {post.caption}
+        </p>
       )}
       {/* Image */}
       <div className="w-full rounded-md mb-2 overflow-hidden bg-gray-50 dark:bg-gray-800 aspect-[4/5] sm:aspect-[3/4]">
-        <img src={post.image} alt="post_img" className="w-full h-full object-cover" />
+        <img
+          src={post.image}
+          alt="post_img"
+          className="w-full h-full object-cover"
+        />
       </div>
 
       {/* Action Icons */}
       <div className="flex items-center justify-between mb-1 text-gray-600 dark:text-gray-300">
         <div className="flex items-center gap-4">
           {liked ? (
-            <FaHeart onClick={likeDislike} size={20} className="cursor-pointer text-red-500" />
+            <FaHeart
+              onClick={likeDislike}
+              size={20}
+              className="cursor-pointer text-red-500"
+            />
           ) : (
-            <FaRegHeart onClick={likeDislike} size={20} className="cursor-pointer hover:text-red-500" />
+            <FaRegHeart
+              onClick={likeDislike}
+              size={20}
+              className="cursor-pointer hover:text-red-500"
+            />
           )}
           <MessageCircle
             onClick={() => {
@@ -175,17 +199,16 @@ const Post = ({ post }) => {
       </span>
 
       {/* Comment Count Link */}
-      {
-        comment.length>0 && <span
-        onClick={() => {
-          dispatch(setSelectedPost(post));
-          setOpen(true);
-        }}
-        className="text-xs text-gray-500 dark:text-gray-400 cursor-pointer mb-1 block"
-      >
-        View all {comment.length} comments
-      </span>
-      }
+      {comment.length > 0 && (
+        <span
+          onClick={() => {
+            dispatch(setSelectedPost(post));
+            setOpen(true);
+          }}
+          className="text-xs text-gray-500 dark:text-gray-400 cursor-pointer mb-1 block">
+          View all {comment.length} comments
+        </span>
+      )}
 
       <CommentDialog open={open} setOpen={setOpen} post={post} />
 
@@ -199,7 +222,9 @@ const Post = ({ post }) => {
           className="outline-none text-sm w-full bg-transparent text-gray-700 dark:text-gray-200"
         />
         {text && (
-          <span onClick={commentHandler} className="text-blue-500 text-sm font-medium cursor-pointer ml-2">
+          <span
+            onClick={commentHandler}
+            className="text-blue-500 text-sm font-medium cursor-pointer ml-2">
             Post
           </span>
         )}

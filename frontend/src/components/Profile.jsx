@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import useGetUserProfile from "@/hooks/useGetUserProfile";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Button } from "./ui/button";
 import { Heart } from "lucide-react";
@@ -14,9 +14,13 @@ const Profile = () => {
   const [activeTabs, setActiveTabs] = useState("post");
   const [open, setOpen] = useState(false);
 const [selectedPost, setSelectedPost] = useState(null);
+useEffect(() => {
+  setActiveTabs("post");
+}, [userId]);
+
 
   
-  const { userProfile } = useSelector((store) => store.auth);
+  const { userProfile, user } = useSelector((store) => store.auth);
 
   const getInitials = (name) => {
     if (!name) return "U";
@@ -31,8 +35,12 @@ const [selectedPost, setSelectedPost] = useState(null);
 
   const displayPost =
     activeTabs === "post" ? userProfile?.posts : userProfile?.bookmarks;
-  const isLoggedInUser = true;
+const isLoggedInUser = !!user && !!userProfile && user._id === userProfile._id;
   const isFollowing = false;
+  if (!userProfile) {
+  return <div className="text-center py-10">Loading profile...</div>;
+}
+
   return (
     <div className="bg-white dark:bg-gray-950 text-gray-900 dark:text-white min-h-screen">
       <div className="relative w-full h-40 bg-gradient-to-r from-blue-200 via-purple-200 to-pink-200 dark:from-blue-900 dark:via-purple-900 dark:to-pink-900 " />
@@ -70,11 +78,13 @@ const [selectedPost, setSelectedPost] = useState(null);
           <div className="mt-4 flex justify-center sm:justify-start gap-2">
             {isLoggedInUser ? (
               <>
+              <Link to={'/account/edit'}>
                 <Button
                   variant="secondary"
                   className="text-xs hover:bg-purple-400 bg-purple-300 dark:bg-purple-900 dark:text-white hover:dark:bg-purple-950 h-8">
                   Edit Profile
                 </Button>
+              </Link>
                 <Button
                   variant="secondary"
                   className="text-xs hover:bg-purple-400 bg-purple-300 dark:bg-purple-900 dark:text-white hover:dark:bg-purple-950 h-8">
