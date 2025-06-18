@@ -92,7 +92,11 @@ const Post = ({ post }) => {
         }
       );
       if (res.data.success) {
-        const updatedCommentData = [...comment, res.data.message];
+        const newComment = {
+          ...res.data.comment,
+          author: user,
+        };
+        const updatedCommentData = [...comment, newComment];
         setComment(updatedCommentData);
 
         const updatedPostData = posts.map((p) =>
@@ -182,7 +186,7 @@ const Post = ({ post }) => {
           )}
           <MessageCircle
             onClick={() => {
-              dispatch(setSelectedPost(post)); // fix: ensure selected post is synced
+              dispatch(setSelectedPost({ ...post, comments: comment })); // fix: ensure selected post is synced
               setOpen(true);
             }}
             size={20}
@@ -202,7 +206,7 @@ const Post = ({ post }) => {
       {comment.length > 0 && (
         <span
           onClick={() => {
-            dispatch(setSelectedPost(post));
+            dispatch(setSelectedPost({ ...post, comments: comment }));
             setOpen(true);
           }}
           className="text-xs text-gray-500 dark:text-gray-400 cursor-pointer mb-1 block">

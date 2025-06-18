@@ -159,7 +159,7 @@ export const getProfile = async (req, res) => {
 export const editProfile = async (req, res) => {
   try {
     const userId = req.id;
-    const { bio, gender } = req.body;
+    const { bio, gender, name, username } = req.body;
     const profilePicture = req.file;
     let cloudResponse;
 
@@ -181,6 +181,17 @@ export const editProfile = async (req, res) => {
     if (bio) user.bio = bio;
     if (gender) user.gender = gender;
     if (profilePicture) user.profilePicture = cloudResponse.secure_url;
+
+    if (name) user.name = name;
+    if (username && username !== user.username) {
+      const exists = await User.findOne({ username });
+      if (exists && exists._id.toString() !== user._id.toString()) {
+        return res
+          .status(409)
+          .json({ message: "Username already in use", success: false });
+      }
+      user.username = username;
+    }
 
     await user.save(); //saves in database
 
@@ -279,5 +290,30 @@ export const followUnfollowUser = async (req, res) => {
       message: "Internal server error",
       success: false,
     });
+  }
+};
+
+// controllers/user.controller.js
+export const checkUsername = async (req, res) => {
+  try {
+    const { username } = req.query;
+    const userId = req.id;
+
+    if (!username) {
+      return res
+        .status(400)
+        .json({ message: "Username is required", success: false });
+    }
+
+    const existingUser = await User.findOne({ username });
+
+    if (existingUser && existingUser._id.toString() !== userId) {
+      return res.status(200).json({ isTaken: true });
+    }
+
+    return res.status(200).json({ isTaken: false });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error", success: false });
   }
 };

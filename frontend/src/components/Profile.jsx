@@ -13,13 +13,11 @@ const Profile = () => {
   useGetUserProfile(userId);
   const [activeTabs, setActiveTabs] = useState("post");
   const [open, setOpen] = useState(false);
-const [selectedPost, setSelectedPost] = useState(null);
-useEffect(() => {
-  setActiveTabs("post");
-}, [userId]);
+  const [selectedPost, setSelectedPost] = useState(null);
+  useEffect(() => {
+    setActiveTabs("post");
+  }, [userId]);
 
-
-  
   const { userProfile, user } = useSelector((store) => store.auth);
 
   const getInitials = (name) => {
@@ -35,11 +33,12 @@ useEffect(() => {
 
   const displayPost =
     activeTabs === "post" ? userProfile?.posts : userProfile?.bookmarks;
-const isLoggedInUser = !!user && !!userProfile && user._id === userProfile._id;
+  const isLoggedInUser =
+    !!user && !!userProfile && user._id === userProfile._id;
   const isFollowing = false;
   if (!userProfile) {
-  return <div className="text-center py-10">Loading profile...</div>;
-}
+    return <div className="text-center py-10">Loading profile...</div>;
+  }
 
   return (
     <div className="bg-white dark:bg-gray-950 text-gray-900 dark:text-white min-h-screen">
@@ -78,13 +77,13 @@ const isLoggedInUser = !!user && !!userProfile && user._id === userProfile._id;
           <div className="mt-4 flex justify-center sm:justify-start gap-2">
             {isLoggedInUser ? (
               <>
-              <Link to={'/account/edit'}>
-                <Button
-                  variant="secondary"
-                  className="text-xs hover:bg-purple-400 bg-purple-300 dark:bg-purple-900 dark:text-white hover:dark:bg-purple-950 h-8">
-                  Edit Profile
-                </Button>
-              </Link>
+                <Link to={"/account/edit"}>
+                  <Button
+                    variant="secondary"
+                    className="text-xs hover:bg-purple-400 bg-purple-300 dark:bg-purple-900 dark:text-white hover:dark:bg-purple-950 h-8">
+                    Edit Profile
+                  </Button>
+                </Link>
                 <Button
                   variant="secondary"
                   className="text-xs hover:bg-purple-400 bg-purple-300 dark:bg-purple-900 dark:text-white hover:dark:bg-purple-950 h-8">
@@ -206,46 +205,44 @@ const isLoggedInUser = !!user && !!userProfile && user._id === userProfile._id;
           </span>
         </div>
 
-        
-<div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-  {displayPost?.length === 0 ? (
-    <div className="text-center text-gray-500 dark:text-gray-400 py-10 col-span-full">
-      No {activeTabs === "post" ? "posts" : "saved posts"} yet.
-    </div>
-  ) : (
-    displayPost.map((post) => (
-      <div
-        onClick={() => {
-          setSelectedPost(post);
-          setOpen(true);
-        }}
-        key={post._id}
-        className="relative group rounded overflow-hidden shadow cursor-pointer"
-      >
-        <img
-          src={post.image}
-          alt={post.caption || "Post image"}
-          className="w-full h-[200px] object-cover group-hover:opacity-100 transition-opacity duration-300"
-        />
-        <div className="absolute inset-0 bg-black bg-opacity-60 group-hover:bg-opacity-0 transition-all duration-300 flex items-center justify-center">
-          <div className="flex gap-4 text-white font-semibold text-sm sm:text-base opacity-100 group-hover:opacity-0 transition-opacity duration-300">
-            <div className="flex items-center gap-1">
-              <Heart /> {post.likes?.length || 0}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {displayPost?.length === 0 ? (
+            <div className="text-center text-gray-500 dark:text-gray-400 py-10 col-span-full">
+              No {activeTabs === "post" ? "posts" : "saved posts"} yet.
             </div>
-            <div className="flex items-center gap-1">
-              <FaComment /> {post.comments?.length || 0}
-            </div>
-          </div>
+          ) : (
+            displayPost.map((post) => (
+              <div
+                onClick={() => {
+                  setSelectedPost(post);
+                  setOpen(true);
+                }}
+                key={post._id}
+                className="relative group rounded overflow-hidden shadow cursor-pointer">
+                <img
+                  src={post.image}
+                  alt={post.caption || "Post image"}
+                  className="w-full h-[200px] object-cover group-hover:opacity-100 transition-opacity duration-300"
+                />
+                <div className="absolute inset-0 bg-black bg-opacity-60 group-hover:bg-opacity-0 transition-all duration-300 flex items-center justify-center">
+                  <div className="flex gap-4 text-white font-semibold text-sm sm:text-base opacity-100 group-hover:opacity-0 transition-opacity duration-300">
+                    <div className="flex items-center gap-1">
+                      <Heart /> {post.likes?.length || 0}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <FaComment /> {post.comments?.length || 0}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
-      </div>
-    ))
-  )}
-</div>
 
-{/* Post Detail Dialog */}
-{selectedPost && (
-  <CommentDialog open={open} setOpen={setOpen} post={selectedPost} />
-)}
+        {/* Post Detail Dialog */}
+        {selectedPost && (
+          <CommentDialog open={open} setOpen={setOpen} post={selectedPost} />
+        )}
       </div>
     </div>
   );
