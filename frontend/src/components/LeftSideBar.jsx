@@ -56,6 +56,7 @@ const LeftSideBar = () => {
     if (textType === "Create") setOpen(true);
     if (textType === "More") setShowMoreDialog(true);
     if (textType === "Profile") navigate(`/profile/${user?._id}`);
+    if (textType === "Messages") navigate(`/chat`);
   };
 
   const sidebarItems = [

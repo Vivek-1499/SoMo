@@ -24,12 +24,18 @@ const SuggestedUsers = () => {
         {suggestedUsers.slice(0, 3).map((user) => (
           <div
             key={user._id}
-            className="flex items-center justify-between px-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-          >
-            <Link to={`/profile/${user._id}`} className="flex items-center gap-3 group">
+            className="flex items-center justify-between px-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+            <Link
+              to={`/profile/${user._id}`}
+              className="flex items-center gap-3 group">
               <Avatar className="bg-slate-200 w-8 h-8">
-                <AvatarImage src={user?.profilePicture} className="object-cover" />
-                <AvatarFallback>{user?.username?.charAt(0) || "U"}</AvatarFallback>
+                <AvatarImage
+                  src={user?.profilePicture}
+                  className="object-cover"
+                />
+                <AvatarFallback>
+                  {user?.username?.charAt(0) || "U"}
+                </AvatarFallback>
               </Avatar>
 
               <div className="flex flex-col">
@@ -37,7 +43,7 @@ const SuggestedUsers = () => {
                   {user?.username || "Unknown"}
                 </span>
                 <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[140px]">
-                  {user?.bio || "No bio available"}
+                  Suggested User
                 </span>
               </div>
             </Link>
@@ -48,8 +54,7 @@ const SuggestedUsers = () => {
                 e.preventDefault();
                 // Trigger follow action here
                 console.log(`Follow ${user.username}`);
-              }}
-            >
+              }}>
               Follow
             </button>
           </div>

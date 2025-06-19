@@ -8,11 +8,11 @@ import { Socket } from 'socket.io';
 import http from 'http';
 import postRoute from './routes/post.route.js';
 import messageRoute from './routes/message.route.js'
+import { app, server } from './socket/socket.js';
 
 dotenv.config({})
 const PORT =  process.env.PORT || 3000;
 
-const app = express();
 
 app.get("/", (req, res)=>{
   return res.status(200).json({
@@ -35,8 +35,9 @@ app.use(cors(corsOption));
 app.use('/api/v2/user', userRoute);  //create routes so https://localhost/8000 and whatever router
 app.use('/api/v2/post', postRoute);
 app.use('/api/v2/message', messageRoute);
+
 connectDB().then(() => {
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`Server running at port ${PORT}`);
   });
 }).catch(err => {

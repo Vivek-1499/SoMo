@@ -1,34 +1,89 @@
-import React from 'react'
-import { useSelector } from 'react-redux'
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
+import React from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { setSelectedUser } from "@/redux/authSlice";
+import { MessageCircleCode } from "lucide-react";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
+import Messages from "./Messages";
 
 const ChatPage = () => {
-  const {user, suggestedUsers} = useSelector(store => store.auth)
+  const { user, suggestedUsers, selectedUser } = useSelector((store) => store.auth);
+  const isOnline = false;
+  const dispatch = useDispatch();
+
   return (
-    <div className='flex ml-auto'>
-      <section>
-        <h1>{user?.username}</h1>
-        <hr className='mb-4 border-gray-300'/>
-        <div className='overflow-y-auto h-[80vh]'>
-          {
-suggestedUsers.map((suggestedUser)=>{
-  return(
-    <div>
-      <Avatar>
-        <AvatarImage src={suggestedUser?.profilePicture}/>
-        <AvatarFallback className='bg-gray-300'>U</AvatarFallback>
-      </Avatar>
-      <div>
-        <span>{suggestedUser?.username}</span>
-      </div>
-    </div>
-  )
-})
-          }
+    <div className="flex flex-col md:flex-row md:ml-[16%] h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-white transition-colors duration-300">
+      {/* Sidebar */}
+      <section className="w-full md:w-[300px] p-3 border-b md:border-b-0 md:border-r border-gray-300 dark:border-gray-700">
+        <h1 className="font-bold mb-4 text-xl">{user?.username}</h1>
+        <hr className="mb-4 border-gray-300 dark:border-gray-700" />
+        <div className="overflow-y-auto max-h-[60vh] md:max-h-[80vh]">
+          {suggestedUsers.map((suggestedUser) => (
+            <div
+              key={suggestedUser._id}
+              onClick={() => dispatch(setSelectedUser(suggestedUser))}
+              className="flex gap-3 items-center p-3 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+            >
+              <Avatar>
+                <AvatarImage className="object-cover" src={suggestedUser?.profilePicture} />
+                <AvatarFallback className="bg-gray-300 dark:bg-gray-700 text-black dark:text-white">U</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col">
+                <span className="font-medium">{suggestedUser?.username}</span>
+                <span className={`text-xs font-bold ${isOnline ? "text-green-400" : "text-red-400"}`}>
+                  {isOnline ? "online" : "offline"}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
-    </div>
-  )
-}
 
-export default ChatPage
+      {/* Chat Window */}
+      {selectedUser ? (
+        <section className="flex-1 flex flex-col h-full">
+          {/* Header */}
+          <div className="flex gap-3 items-center px-3 py-2 border-b border-gray-300 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-950 z-10">
+            <Avatar>
+              <AvatarImage className='object-cover'src={selectedUser?.profilePicture} alt="profile image" />
+              <AvatarFallback className='bg-gray-300 dark:bg-gray-700'>U</AvatarFallback>
+            </Avatar>
+            <div>
+              <span className="font-medium">{selectedUser?.username}</span>
+            </div>
+          </div>
+          <Messages selectedUser = {selectedUser}/>
+
+          {/* Messages
+          <div className="flex-1 p-4 overflow-y-auto">
+            <p className="text-center text-gray-500 dark:text-gray-400">No messages yet</p>
+          </div> */}
+
+          {/* Message Input */}
+          <div className="flex items-center p-4 border-t border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950">
+            <Input
+              type="text"
+              className="flex-1 mr-2 focus-visible:ring-transparent dark:bg-gray-800 dark:text-white"
+              placeholder="Type your message..."
+            />
+            <Button className="bg-purple-300 hover:bg-purple-400 dark:bg-purple-900 dark:hover:bg-purple-950 dark:text-white">
+              Send
+            </Button>
+          </div>
+        </section>
+      ) : (
+        // Empty State
+        <div className="flex flex-col items-center justify-center flex-1 p-4 text-center">
+          <MessageCircleCode className="w-20 h-20 md:w-32 md:h-32 my-4 text-gray-400 dark:text-gray-600" />
+          <h1 className="font-medium text-xl">Your messages</h1>
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            Send a message to start a chat
+          </span>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ChatPage;
