@@ -16,6 +16,7 @@ import { setAuthUser } from "@/redux/authSlice";
 import { useState } from "react";
 import CreatePost from "./CreatePost";
 import SuggestedUsers from "./SuggestedUsers";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 const LeftSideBar = () => {
   const navigate = useNavigate();
@@ -24,7 +25,10 @@ const LeftSideBar = () => {
   const [open, setOpen] = useState(false);
   const [showMoreDialog, setShowMoreDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("Home");
-  
+  const { likeNotification } = useSelector(
+    (store) => store.realTimeNotification
+  );
+
   const [isDarkMode, setIsDarkMode] = useState(() =>
     document.documentElement.classList.contains("dark")
   );
@@ -96,14 +100,46 @@ const LeftSideBar = () => {
                   onClick={() => sidebarHandler(item.text)}
                   key={index}
                   className={`flex items-center space-x-3 w-full py-2 px-4 rounded-lg transition
-  ${activeTab === item.text
-    ? "bg-gray-200 dark:bg-gray-700 text-black dark:text-white font-semibold"
-    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+  ${
+    activeTab === item.text
+      ? "bg-gray-200 dark:bg-gray-700 text-black dark:text-white font-semibold"
+      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
   }`}>
                   <div className="w-6 h-6">{item.icon}</div>
                   <span className="hidden md:inline text-sm font-medium">
                     {item.text}
                   </span>
+                  {item.text === "Notifications" &&
+                    likeNotification.length > 0 && (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Buttton
+                            size="icon"
+                            className="rounded-full h-6 w-6 absolute bottom-6 left-6">
+                            {likeNotification.length}
+                          </Buttton>
+
+                        </PopoverTrigger>
+                         <PopoverContent>
+                          <div>
+                            {
+                              likeNotification.length === 0 ?(<p>No New Notification</p>):likeNotification.map((notification)=>{
+                                return(
+                                  <div key={notification.userId}>
+                                    <Avatar>
+                                      <AvatarImage src={notification.userDetails?.profilePicture}/>
+                                    </Avatar>
+                                    <p className="text-sm">
+                                       <span className="font-bold">
+                                        {notification.userDetails?.username}liked your post</span></p>
+                                  </div>
+                                )
+                              })
+                            }
+                          </div>
+                         </PopoverContent>
+                      </Popover>
+                    )}
                 </button>
               ))}
             </div>
@@ -133,9 +169,10 @@ const LeftSideBar = () => {
               onClick={() => sidebarHandler(item.text)}
               key={index}
               className={`flex items-center justify-center text-xs
-  ${activeTab === item.text
-    ? "text-black dark:text-white font-bold"
-    : "text-gray-600 dark:text-gray-300"
+  ${
+    activeTab === item.text
+      ? "text-black dark:text-white font-bold"
+      : "text-gray-600 dark:text-gray-300"
   }`}>
               <div className="w-6 h-6">{item.icon}</div>
             </button>
