@@ -3,7 +3,7 @@ import { Post } from '../models/post.model.js';
 import cloudinary from '../utils/cloudinary.js';
 import { User } from '../models/user.model.js';
 import { Comment } from '../models/comment.model.js';
-import { getRecieverSocketId, io } from '../socket/socket.js';
+import { getReceiverSocketId, io } from '../socket/socket.js';
 
 export const addNewPost = async(req, res) =>{
   try {
@@ -114,8 +114,11 @@ export const likePost = async(req, res) =>{
         postId,
         message: 'Your post was likes'
       }
-      const postOwnerSocketId = getRecieverSocketId(postOwnerId);
-      io.to(postOwnerId).emit('notification', notification);
+      const postOwnerSocketId = getReceiverSocketId(postOwnerId);
+      if (postOwnerSocketId) {
+      io.to(postOwnerSocketId).emit('notification', notification);
+    }
+
     }
 
 
@@ -149,10 +152,12 @@ export const unLikePost = async(req, res) =>{
         userId: liker,
         userDetails: user,
         postId,
-        message: 'Your post was likes'
+        message: 'Your post was unliked'
       }
-      const postOwnerSocketId = getRecieverSocketId(postOwnerId);
-      io.to(postOwnerId).emit('notification', notification);
+      const postOwnerSocketId = getReceiverSocketId(postOwnerId);
+      if (postOwnerSocketId) {
+        io.to(postOwnerSocketId).emit('notification', notification);
+      }
     }
 
     return res.status(200).json({message:'Post unliked', success: true})

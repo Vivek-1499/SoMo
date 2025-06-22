@@ -1,14 +1,15 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog";
 import { Bookmark, MessageCircle, MoreHorizontal, Send } from "lucide-react";
 import { Button } from "./ui/button";
-import { FaHeart, FaRegHeart } from "react-icons/fa";
+import { FaBookmark, FaHeart, FaRegBookmark, FaRegHeart } from "react-icons/fa";
 import CommentDialog from "./CommentDialog";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
 import axios from "axios";
 import { setPosts, setSelectedPost } from "@/redux/postSlice";
+import { setAuthUser } from "@/redux/authSlice";
 
 const Post = ({ post }) => {
   const [open, setOpen] = useState(false);
@@ -19,6 +20,16 @@ const Post = ({ post }) => {
   const [comment, setComment] = useState(post.comments);
   const [postLike, setPostLike] = useState(post.likes.length);
   const [loading, setLoading] = useState(false);
+  const [bookmarked, setBookmarked] = useState(false);
+  const isBookmarked = user?.bookmarks?.includes(post._id);
+
+  useEffect(() => {
+  if (user?.bookmarks) {
+    const isMarked = user.bookmarks?.some((id) => id.toString() === post._id.toString())
+    setBookmarked(isMarked);
+  }
+}, [user.bookmarks, post._id]);
+
 
   const dispatch = useDispatch();
   const changeEventHandler = (e) => {
@@ -114,6 +125,32 @@ const Post = ({ post }) => {
     }
   };
 
+  const bookmarkHandler = async () => {
+  try {
+    const res = await axios.get(
+      `http://localhost:8000/api/v2/post/${post?._id}/bookmark`,
+      { withCredentials: true }
+    );
+    if (res.data.success) {
+      toast.success(res.data.message);
+
+      // Optimistically toggle local UI
+      setBookmarked((prev) => !prev);
+
+      const userRes = await axios.get("http://localhost:8000/api/v2/user/profile", {
+        withCredentials: true,
+      });
+
+      if (userRes.data.success) {
+        dispatch(setAuthUser(userRes.data.user));
+      }
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+
   return (
     <div className="my-5 w-full max-w-md mx-auto rounded-xl shadow-sm bg-white dark:bg-gray-900 p-3 sm:p-4 transition-colors">
       <div className="flex items-center justify-between mb-2">
@@ -135,9 +172,12 @@ const Post = ({ post }) => {
             <MoreHorizontal className="cursor-pointer text-gray-500 hover:text-gray-800 dark:hover:text-white" />
           </DialogTrigger>
           <DialogContent className="bg-white dark:bg-zinc-900 rounded-xl w-full sm:max-w-lg p-4 space-y-4 max-h-[90vh] overflow-y-auto">
+            {
+              post?.author?._id !== user?._id &&
             <Button variant="ghost" className="text-red-500">
               Unfollow
             </Button>
+            }
             <Button variant="ghost" className="dark:text-gray-300">
               Add to Favourite
             </Button>
@@ -194,7 +234,20 @@ const Post = ({ post }) => {
           />
           <Send size={20} className="cursor-pointer hover:text-green-500" />
         </div>
-        <Bookmark size={20} className="cursor-pointer hover:text-yellow-500" />
+
+        {bookmarked ? (
+          <FaBookmark
+            onClick={bookmarkHandler}
+            size={18}
+            className="cursor-pointer text-yellow-500"
+          />
+        ) : (
+          <FaRegBookmark
+            onClick={bookmarkHandler}
+            size={18}
+            className="cursor-pointer hover:text-yellow-500"
+          />
+        )}
       </div>
 
       {/* Like Count */}

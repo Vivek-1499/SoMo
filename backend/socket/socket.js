@@ -15,7 +15,7 @@ const io = new Server(server, {
 })
 
 const userSocketMap = {};//we get to know how many users are online using it, it stores user socket id corresponding to userId
-export const getRecieverSocketId = (receiverId) => userSocketMap[receiverId];
+export const getReceiverSocketId = (receiverId) => userSocketMap[receiverId];
 
 io.on('connection', (socket) => {
   const userId = socket.handshake.query.userId;
@@ -26,12 +26,10 @@ io.on('connection', (socket) => {
   }
 
   userSocketMap[userId] = socket.id;
-  console.log(`✅ user connected: userId = ${userId}, socketId = ${socket.id}`);
 
   io.emit('getOnlineUsers', Object.keys(userSocketMap));
 
   socket.on('disconnect', () => {
-    console.log(`❌ user disconnected: userId = ${userId}, socketId = ${socket.id}`);
     delete userSocketMap[userId];
     io.emit('getOnlineUsers', Object.keys(userSocketMap));
   });

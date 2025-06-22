@@ -1,10 +1,22 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Login from "./Login";
 import SignUp from "./SignUp";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const {user} = useSelector(store => store.auth)
+const navigate =useNavigate();
+
+
+useEffect(()=>{
+  if(user){
+    navigate('/');
+  }
+},[])
+
 
   const activeTab =
     "text-black dark:text-white border-b-2 border-black dark:border-white";
