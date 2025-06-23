@@ -5,7 +5,7 @@ const authSlice = createSlice({
   initialState: {
     user: null,
     suggestedUsers: [],
-    userProfile: null, // renamed from profilePicture
+    userProfile: null,
     selectedUser: null,
   },
   reducers: {
@@ -16,7 +16,6 @@ const authSlice = createSlice({
       state.suggestedUsers = action.payload;
     },
     setUserProfile: (state, action) => {
-      // renamed from setProfilePicture
       state.userProfile = action.payload;
     },
     setSelectedUser: (state, action) => {

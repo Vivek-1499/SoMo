@@ -8,31 +8,41 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Button } from "./ui/button";
 import { Popover, PopoverTrigger, PopoverContent } from "./ui/popover";
 import { toast } from "sonner";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setAuthUser } from "@/redux/authSlice";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CreatePost from "./CreatePost";
 import SuggestedUsers from "./SuggestedUsers";
+import { markNotificationsAsSeen } from "@/redux/rtnSlice";
 
 const LeftSideBar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector((store) => store.auth);
-  const { likeNotification } = useSelector(
-    (store) => store.realTimeNotification
-  );
-
   const [open, setOpen] = useState(false);
   const [showMoreDialog, setShowMoreDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("Home");
+  const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
   const [isDarkMode, setIsDarkMode] = useState(() =>
     document.documentElement.classList.contains("dark")
   );
+  const { notifications = [] } = useSelector(
+    (store) => store.realTimeNotification || {}
+  );
+
+  const unseenCount = notifications.filter((notif) => !notif.seen).length;
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth < 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const toggleTheme = () => {
     const html = document.documentElement;
@@ -62,6 +72,8 @@ const LeftSideBar = () => {
     if (textType === "More") setShowMoreDialog(true);
     if (textType === "Profile") navigate(`/profile/${user?._id}`);
     if (textType === "Messages") navigate(`/chat`);
+    if (textType === "Notifications" && isMobileView)
+      navigate("/notifications");
   };
 
   const sidebarItems = [
@@ -98,8 +110,11 @@ const LeftSideBar = () => {
                 const isNotifications = item.text === "Notifications";
                 return (
                   <div key={index} className="relative">
-                    {isNotifications ? (
-                      <Popover>
+                    {isNotifications && !isMobileView ? (
+                      <Popover
+                        onOpenChange={(open) => {
+                          if (open) dispatch(markNotificationsAsSeen());
+                        }}>
                         <PopoverTrigger asChild>
                           <button
                             onClick={() => sidebarHandler(item.text)}
@@ -110,9 +125,9 @@ const LeftSideBar = () => {
                             }`}>
                             <div className="relative w-6 h-6">
                               {item.icon}
-                              {likeNotification.length > 0 && (
+                              {unseenCount > 0 && (
                                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
-                                  {likeNotification.length}
+                                  {unseenCount}
                                 </span>
                               )}
                             </div>
@@ -122,17 +137,19 @@ const LeftSideBar = () => {
                           </button>
                         </PopoverTrigger>
 
-                        <PopoverContent className="w-64 bg-indigo-50 dark:bg-gray-950 dark:text-white">
+                        <PopoverContent className="w-72 bg-indigo-50 dark:bg-gray-950 dark:text-white">
                           <div className="space-y-3 max-h-80 overflow-y-auto">
-                            {likeNotification.length === 0 ? (
+                            {notifications.length === 0 ? (
                               <p className="text-sm text-gray-500 text-center">
-                                No New Notifications
+                                No Notifications
                               </p>
                             ) : (
-                              likeNotification.map((notification) => (
-                                <div
-                                  key={notification.userId}
-                                  className="flex gap-3 items-center">
+                              notifications.map((notification, idx) => (
+                                <Link
+                                  to={`/post/${notification.postId}`}
+                                  key={idx}
+                                  onClick={() => setShowMoreDialog(false)}
+                                  className="flex gap-3 items-center hover:bg-gray-100 dark:hover:bg-gray-800 px-2 py-1 rounded transition">
                                   <Avatar className="h-8 w-8">
                                     <AvatarImage
                                       src={
@@ -140,15 +157,19 @@ const LeftSideBar = () => {
                                       }
                                       className="object-cover"
                                     />
-                                    <AvatarFallback className='bg-gray-300'>U</AvatarFallback>
+                                    <AvatarFallback className="bg-gray-300">
+                                      U
+                                    </AvatarFallback>
                                   </Avatar>
                                   <p className="text-sm">
                                     <span className="font-bold">
                                       {notification.userDetails?.username}
                                     </span>{" "}
-                                    liked your post
+                                    {notification.type === "like"
+                                      ? "liked your post"
+                                      : `commented: "${notification.content}"`}
                                   </p>
-                                </div>
+                                </Link>
                               ))
                             )}
                           </div>
@@ -162,7 +183,14 @@ const LeftSideBar = () => {
                             ? "bg-gray-200 dark:bg-gray-700 text-black dark:text-white font-semibold"
                             : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                         }`}>
-                        <div className="w-6 h-6">{item.icon}</div>
+                        <div className="relative w-6 h-6">
+                          {item.icon}
+                          {isNotifications && unseenCount > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
+                              {unseenCount}
+                            </span>
+                          )}
+                        </div>
                         <span className="hidden md:inline text-sm font-medium">
                           {item.text}
                         </span>
@@ -193,18 +221,29 @@ const LeftSideBar = () => {
       <nav className="md:hidden fixed bottom-0 left-0 w-full h-14 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 flex justify-around items-center z-20">
         {sidebarItems
           .filter((item) => item.showOnMobile)
-          .map((item, index) => (
-            <button
-              onClick={() => sidebarHandler(item.text)}
-              key={index}
-              className={`flex items-center justify-center text-xs ${
-                activeTab === item.text
-                  ? "text-black dark:text-white font-bold"
-                  : "text-gray-600 dark:text-gray-300"
-              }`}>
-              <div className="w-6 h-6">{item.icon}</div>
-            </button>
-          ))}
+          .map((item, index) => {
+            const isNotifications = item.text === "Notifications";
+
+            return (
+              <button
+                onClick={() => sidebarHandler(item.text)}
+                key={index}
+                className={`relative flex items-center justify-center text-xs ${
+                  activeTab === item.text
+                    ? "text-black dark:text-white font-bold"
+                    : "text-gray-600 dark:text-gray-300"
+                }`}>
+                <div className="w-6 h-6 relative">
+                  {item.icon}
+                  {isNotifications && unseenCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
+                      {unseenCount}
+                    </span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
       </nav>
 
       {/* Create Post Modal */}

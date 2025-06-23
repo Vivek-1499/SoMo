@@ -1,6 +1,7 @@
 import {
   BrowserRouter,
   createBrowserRouter,
+  Link,
   RouterProvider,
 } from "react-router-dom";
 import MainLayout from "./components/MainLayout";
@@ -14,41 +15,64 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setSocket } from "./redux/socketSlice";
 import { setOnlineUsers } from "./redux/chatSlice";
-import { setLikeNotification } from "./redux/rtnSlice";
+import { setCommentNotification, setLikeNotification } from "./redux/rtnSlice";
 import ProtectedRoutes from "./components/ProtectedRoutes";
+import NotificationsPage from "./components/NotificationsPage";
 
 const browserRouter = createBrowserRouter([
   {
-    path: "/",
-    element: <ProtectedRoutes><MainLayout /></ProtectedRoutes>,
-    children: [
-      {
-        path: "/",
-        element: <ProtectedRoutes><Home /></ProtectedRoutes>
-      },
-      {
-        path: "login",
-        element:<Auth />,
-      },
-      {
-        path: "/profile/:id",
-        element: <ProtectedRoutes><Profile /></ProtectedRoutes>,
-      },
-      {
-        path: "/account/edit",
-        element: <ProtectedRoutes><EditProfile /></ProtectedRoutes>,
-      },
-      {
-        path: "/chat",
-        element: <ProtectedRoutes><ChatPage /></ProtectedRoutes>,
-      },
-    ],
+    path: "/login",
+    element: <Auth />,
   },
   {
     path: "/auth",
     element: <Auth />,
   },
+  {
+    path: "/",
+    element: (
+      <ProtectedRoutes>
+        <MainLayout />
+      </ProtectedRoutes>
+    ),
+    errorElement: (
+      <div className="flex items-center justify-center h-screen text-center">
+        <div>
+          <h2 className="text-2xl font-bold mb-2">404 - Page Not Found</h2>
+          <p className="text-gray-600">
+            Oops! The page you're looking for doesn't exist.
+          </p>
+          <Link to="/" className="text-blue-500 underline mt-4 block">
+            Go to Home
+          </Link>
+        </div>
+      </div>
+    ),
+    children: [
+      {
+        path: "/",
+        element: <Home />,
+      },
+      {
+        path: "/profile/:id",
+        element: <Profile />,
+      },
+      {
+        path: "/account/edit",
+        element: <EditProfile />,
+      },
+      {
+        path: "/chat",
+        element: <ChatPage />,
+      },
+      {
+        path: "/notifications",
+        element: <NotificationsPage />,
+      },
+    ],
+  },
 ]);
+
 function App() {
   const { user } = useSelector((store) => store.auth);
   const dispatch = useDispatch();
@@ -69,7 +93,11 @@ function App() {
       });
 
       socketio.on("notification", (notification) => {
-        dispatch(setLikeNotification(notification));
+        if (notification.type === "like") {
+          dispatch(setLikeNotification(notification));
+        } else if (notification.type === "comment") {
+          dispatch(setCommentNotification(notification));
+        }
       });
 
       return () => {

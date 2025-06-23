@@ -239,13 +239,13 @@ const Post = ({ post }) => {
           <FaBookmark
             onClick={bookmarkHandler}
             size={18}
-            className="cursor-pointer text-yellow-500"
+            className="cursor-pointer text-indigo-500"
           />
         ) : (
           <FaRegBookmark
             onClick={bookmarkHandler}
             size={18}
-            className="cursor-pointer hover:text-yellow-500"
+            className="cursor-pointer hover:text-indigo-500"
           />
         )}
       </div>
