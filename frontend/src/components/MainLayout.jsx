@@ -40,17 +40,18 @@ const MainLayout = () => {
         <div
           className={`fixed top-0 left-0 w-full h-14 z-30 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 md:hidden transition-transform duration-300 ${
             showTopBar ? "translate-y-0" : "-translate-y-full"
-          }`}
-        >
+          }`}>
           <h1 className="text-xl font-bold text-black dark:text-white">LOGO</h1>
-          <button onClick={() => navigate("/chat")} className="text-black dark:text-white">
+          <button
+            onClick={() => navigate("/chat")}
+            className="text-black dark:text-white">
             <MessageCircle size={24} />
           </button>
         </div>
       )}
 
       {/* Main Content */}
-      <main className={`flex-1 p-2 ${isMobile ? "pt" : "pt-4"}`}>
+      <main className={`flex-1`}>
         <Outlet />
       </main>
     </div>

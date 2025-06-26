@@ -117,6 +117,7 @@ export const likePost = async (req, res) => {
         userDetails: user,
         postId,
         message: "Your post was likes",
+        createdAt: new Date().toISOString(),
       };
       const postOwnerSocketId = getReceiverSocketId(postOwnerId);
       if (postOwnerSocketId) {
@@ -204,6 +205,7 @@ export const addComment = async (req, res) => {
         postId: post._id,
         content: text,
         message: "commented on your post",
+        createdAt: new Date().toISOString(),
       };
 
       const postOwnerSocketId = getReceiverSocketId(postOwnerId);
@@ -298,23 +300,19 @@ export const bookmarkPost = async (req, res) => {
     if (user.bookmarks.includes(post._id)) {
       await user.updateOne({ $pull: { bookmarks: post._id } });
       await user.save();
-      return res
-        .status(200)
-        .json({
-          type: "unsaved",
-          message: "Post removed from bookmark",
-          success: true,
-        });
+      return res.status(200).json({
+        type: "unsaved",
+        message: "Post removed from bookmark",
+        success: true,
+      });
     } else {
       await user.updateOne({ $addToSet: { bookmarks: post._id } });
       await user.save();
-      return res
-        .status(200)
-        .json({
-          type: "unsaved",
-          message: "Post added to bookmark",
-          success: true,
-        });
+      return res.status(200).json({
+        type: "unsaved",
+        message: "Post added to bookmark",
+        success: true,
+      });
     }
   } catch (error) {
     console.log(error);

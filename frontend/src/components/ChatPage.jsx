@@ -45,12 +45,13 @@ const ChatPage = () => {
     };
   }, []);
   return (
-<div className={`flex flex-col md:flex-row md:ml-20 lg:ml-64 h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-white transition-colors duration-300`}>
+    <div
+      className={`flex flex-col md:flex-row md:ml-20 lg:ml-64 h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-white transition-colors duration-300`}>
       {/* Sidebar */}
-      <section className={`w-full md:w-[300px] p-3 border-b md:border-b-0 md:border-r border-gray-300 dark:border-gray-700 ${
-  selectedUser ? "hidden" : "block"
-} md:block`}>
-
+      <section
+        className={`w-full md:w-[300px] p-3 border-b md:border-b-0 md:border-r border-gray-300 dark:border-gray-700 ${
+          selectedUser ? "hidden" : "block"
+        } md:block`}>
         <h1 className="font-bold mb-4 text-xl">{user?.username}</h1>
         <hr className="mb-4 border-gray-300 dark:border-gray-700" />
         <div className="overflow-y-auto max-h-[60vh] md:max-h-[80vh]">
@@ -87,9 +88,7 @@ const ChatPage = () => {
 
       {/* Chat Window */}
       {selectedUser ? (
-        
         <section className="flex-1 flex flex-col h-full">
-          
           {/* Header */}
           <div className="flex gap-3 items-center px-3 py-2 border-b border-gray-300 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-950 z-10">
             <Avatar>
@@ -106,12 +105,10 @@ const ChatPage = () => {
               <span className="font-medium">{selectedUser?.username}</span>
             </div>
             <Button
-  onClick={() => dispatch(setSelectedUser(null))}
-  className="ml-auto md:hidden text-sm bg-gray-100 dark:bg-gray-800"
->
-  Back
-</Button>
-
+              onClick={() => dispatch(setSelectedUser(null))}
+              className="ml-auto md:hidden text-sm bg-gray-100 dark:bg-gray-800">
+              Back
+            </Button>
           </div>
           <Messages selectedUser={selectedUser} />
 
@@ -138,7 +135,7 @@ const ChatPage = () => {
         </section>
       ) : (
         // Empty State
-        <div className="flex flex-col items-center justify-center flex-1 p-4 text-center">
+        <div className=" hidden flex flex-col items-center justify-center flex-1 p-4 text-center ">
           <MessageCircleCode className="w-20 h-20 md:w-32 md:h-32 my-4 text-gray-400 dark:text-gray-600" />
           <h1 className="font-medium text-xl">Your messages</h1>
           <span className="text-sm text-gray-500 dark:text-gray-400">

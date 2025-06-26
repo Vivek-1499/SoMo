@@ -95,11 +95,10 @@ export const login = async (req, res) => {
       email: user.email,
       profilePicture: user.profilePicture,
       bio: user.bio,
-      followers: user.followers,
-      following: user.following,
       posts: user.posts,
       bookmarks: user.bookmarks,
-      silentFollowing: user.silentFollowing,
+      following: user.following.map((f) => f.userId),
+      followers: user.followers.map((f) => f.userId),
       gender: user.gender,
     };
     if (!process.env.SECRET_KEY)
@@ -138,7 +137,9 @@ export const logout = async (_, res) => {
 export const getProfile = async (req, res) => {
   try {
     const userId = req.params.id;
-    let user = await User.findById(userId)
+    const viewerId = req.id;
+
+    const user = await User.findById(userId)
       .populate({
         path: "posts",
         options: { sort: { createdAt: -1 } },
@@ -146,13 +147,25 @@ export const getProfile = async (req, res) => {
       .populate({
         path: "bookmarks",
         options: { sort: { createdAt: -1 } },
-      });
+      })
+      .populate("followers.userId", "-password")
+      .populate("following.userId", "-password");
+
+    const isFollower = user.followers.find(
+      (f) => f.userId?._id?.toString() === viewerId
+    );
+    const followType = isFollower?.type || "";
+
     return res.status(200).json({
       user,
       success: true,
+      followType,
     });
   } catch (error) {
-    console.log(error);
+    console.error("GetProfile Error:", error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error", success: false });
   }
 };
 
@@ -198,7 +211,19 @@ export const editProfile = async (req, res) => {
     return res.status(200).json({
       message: "Profile Updates",
       success: true,
-      user,
+      user: {
+        _id: user._id,
+        username: user.username,
+        name: user.name,
+        email: user.email,
+        profilePicture: user.profilePicture,
+        bio: user.bio,
+        gender: user.gender,
+        followers: user.followers.map((f) => f.userId),
+        following: user.following.map((f) => f.userId),
+        posts: user.posts,
+        bookmarks: user.bookmarks,
+      },
     });
   } catch (error) {
     console.log(error);
@@ -225,75 +250,81 @@ export const getSuggestedUsers = async (req, res) => {
 };
 
 export const followUnfollowUser = async (req, res) => {
-  const currentUserId = req.id;
-  const targetUserId = req.params.id;
-  const { silent = false } = req.body;
-
-  if (currentUserId === targetUserId) {
-    return res.status(400).json({
-      message: "You cannot follow yourself",
-      success: false,
-    });
-  }
-
   try {
+    const currentUserId = req.user._id;
+    const targetUserId = req.params.id;
+    const { action } = req.body; // action = "follow", "silent", "unfollow"
+
     const currentUser = await User.findById(currentUserId);
     const targetUser = await User.findById(targetUserId);
 
-    if (!currentUser || !targetUser) {
-      return res.status(404).json({
-        message: "User not found",
-        success: false,
-      });
+    if (!targetUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
-    const isFollowing = currentUser.following.includes(targetUserId);
-    const isSilentFollowing =
-      currentUser.silentFollowing.includes(targetUserId);
+    const followerIndex = targetUser.followers.findIndex(
+      (f) => f.userId.toString() === currentUserId.toString()
+    );
+    const followingIndex = currentUser.following.findIndex(
+      (f) => f.userId.toString() === targetUserId.toString()
+    );
 
-    if (isFollowing) {
-      await Promise.all([
-        currentUser.updateOne({
-          $pull: { following: targetUserId, silentFollowing: targetUserId },
-        }),
-        targetUser.updateOne({ $pull: { followers: currentUserId } }),
-      ]);
+    const isFollowing = followerIndex !== -1;
 
-      return res.status(200).json({
-        message: `Unfollowed ${targetUser.username}`,
-        success: true,
-      });
-    } else {
-      const updatePromises = [
-        currentUser.updateOne({ $push: { following: targetUserId } }),
-        targetUser.updateOne({ $push: { followers: currentUserId } }),
-      ];
-
-      if (silent && !isSilentFollowing) {
-        updatePromises.push(
-          currentUser.updateOne({ $push: { silentFollowing: targetUserId } })
-        );
+    // 🟥 Unfollow
+    if (action === "unfollow") {
+      if (!isFollowing) {
+        return res
+          .status(400)
+          .json({ success: false, message: "You're not following this user." });
       }
 
-      await Promise.all(updatePromises);
+      targetUser.followers.splice(followerIndex, 1);
+      if (followingIndex !== -1) {
+        currentUser.following.splice(followingIndex, 1);
+      }
 
-      return res.status(200).json({
-        message: `Now following ${targetUser.username}${
-          silent ? " silently" : ""
-        }`,
-        success: true,
-      });
+      await targetUser.save();
+      await currentUser.save();
+
+      return res
+        .status(200)
+        .json({ success: true, message: "Unfollowed successfully" });
     }
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      message: "Internal server error",
-      success: false,
+
+    // 🟩 Follow / Silent Follow
+    const followType = action === "silent" ? "silent" : "follow";
+
+    if (isFollowing) {
+      // 🟨 Already following → just change type
+      targetUser.followers[followerIndex].type = followType;
+      if (followingIndex !== -1) {
+        currentUser.following[followingIndex].type = followType;
+      }
+    } else {
+      // 🟦 Fresh follow
+      targetUser.followers.push({ userId: currentUserId, type: followType });
+      currentUser.following.push({ userId: targetUserId, type: followType });
+    }
+
+    await targetUser.save();
+    await currentUser.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `${
+        followType === "silent" ? "Silently followed" : "Followed"
+      } successfully`,
+      followType,
     });
+  } catch (error) {
+    console.error("Follow/Unfollow Error:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
-// controllers/user.controller.js
 export const checkUsername = async (req, res) => {
   try {
     const { username } = req.query;

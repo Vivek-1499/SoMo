@@ -31,10 +31,9 @@ const LeftSideBar = () => {
     document.documentElement.classList.contains("dark")
   );
   const { notifications = [] } = useSelector(
-    (store) => store.realTimeNotification || {}
+    (store) => store.realTimeNotification
   );
-
-  const unseenCount = notifications.filter((notif) => !notif.seen).length;
+  const unseenCount = notifications.filter((n) => !n.seen).length;
 
   useEffect(() => {
     const handleResize = () => {

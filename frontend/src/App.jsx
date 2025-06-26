@@ -55,7 +55,7 @@ const browserRouter = createBrowserRouter([
       },
       {
         path: "/profile/:id",
-        element: <Profile />,
+        element:<Profile key={location.pathname} />,
       },
       {
         path: "/account/edit",
@@ -94,6 +94,7 @@ function App() {
 
       socketio.on("notification", (notification) => {
         if (notification.type === "like") {
+          console.log("Received notification:", notification);
           dispatch(setLikeNotification(notification));
         } else if (notification.type === "comment") {
           dispatch(setCommentNotification(notification));

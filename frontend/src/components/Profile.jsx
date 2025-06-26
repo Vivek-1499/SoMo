@@ -2,41 +2,152 @@ import React, { useEffect, useState } from "react";
 import useGetUserProfile from "@/hooks/useGetUserProfile";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link, useParams } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { Button } from "./ui/button";
 import { Heart } from "lucide-react";
 import { FaComment } from "react-icons/fa";
 import CommentDialog from "./CommentDialog";
+import { toast } from "sonner";
+import axios from "axios";
+import { setUserProfile } from "@/redux/authSlice";
+import FollowModal from "./FollowModal";
 
 const Profile = () => {
   const { id: userId } = useParams();
-  useGetUserProfile(userId);
   const [activeTabs, setActiveTabs] = useState("post");
   const [open, setOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
-  useEffect(() => {
-    setActiveTabs("post");
-  }, [userId]);
-
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [loadingFollow, setLoadingFollow] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [showFollowModal, setShowFollowModal] = useState(false);
+  const [followType, setFollowType] = useState("");
   const { userProfile, user } = useSelector((store) => store.auth);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!userId || !user?._id) return;
+
+      setProfileLoading(true);
+      try {
+        const res = await axios.get(
+          `http://localhost:8000/api/v2/user/${userId}/profile`,
+          { withCredentials: true }
+        );
+        if (res.data.success && res.data.user) {
+          dispatch(setUserProfile(res.data.user));
+          // ✅ Use backend-provided followType directly
+          setIsFollowing(!!res.data.followType);
+          setFollowType(res.data.followType || "");
+          setFollowersCount(res.data.user.followers?.length || 0);
+        }
+      } catch (err) {
+        console.error("Failed to load profile", err);
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+    fetchProfile();
+  }, [userId, user]);
 
   const getInitials = (name) => {
     if (!name) return "U";
-    const [first, second] = name.split(" ");
-    return (first?.[0] || "") + (second?.[0] || "");
+    const words = name.trim().split(" ");
+    return words[0]?.[0]?.toUpperCase() + (words[1]?.[0]?.toUpperCase() || "");
   };
 
   const handleTabChange = (tab) => {
     setActiveTabs(tab);
   };
-  console.log("Posts from userProfile:", userProfile?.posts);
+
+  const refreshProfile = async (currentUserId = user?._id) => {
+    try {
+      const res = await axios.get(
+        `http://localhost:8000/api/v2/user/${userId}/profile`,
+        { withCredentials: true }
+      );
+      if (res.data.success) {
+        dispatch(setUserProfile(res.data.user));
+        setIsFollowing(!!res.data.followType);
+        setFollowType(res.data.followType || "");
+        setFollowersCount(res.data.user.followers?.length || 0);
+      }
+    } catch (err) {
+      console.error("Failed to refresh profile");
+    }
+  };
+
+  const handleFollow = async (silent = false) => {
+    if (!userProfile?._id) return;
+    setLoadingFollow(true);
+    try {
+      const res = await axios.post(
+        `http://localhost:8000/api/v2/user/followUnfollowUser/${userProfile._id}`,
+        { action: silent ? "silent" : "follow" }, // ✅ FIXED
+        { withCredentials: true }
+      );
+      if (res.data.success) {
+        toast.success(silent ? "Silently followed!" : "Followed!");
+        setIsFollowing(true);
+        setFollowersCount((prev) => prev + 1);
+        await refreshProfile(user._id);
+      }
+    } catch (err) {
+      console.error("Follow failed", err);
+    } finally {
+      setLoadingFollow(false);
+    }
+  };
+
+  const handleUnfollow = async () => {
+    setLoadingFollow(true);
+    try {
+      const res = await axios.post(
+        `http://localhost:8000/api/v2/user/followUnfollowUser/${userProfile._id}`,
+        { action: "unfollow" }, // ✅ send action explicitly
+        { withCredentials: true }
+      );
+      if (res.data.success) {
+        toast.success("Unfollowed!");
+        setIsFollowing(false);
+        setFollowersCount((prev) => Math.max(0, prev - 1));
+        await refreshProfile(user._id);
+      }
+    } catch (err) {
+      console.error("Unfollow failed", err);
+    } finally {
+      setLoadingFollow(false);
+    }
+  };
+
+  const handleShowFollowModal = (type = "") => {
+    setFollowType(type);
+    setShowFollowModal(true);
+  };
+  const handleFollowAction = async () => {
+    setShowFollowModal(false);
+    await handleFollow(false); // sets followType in refreshProfile
+  };
+
+  const handleSilentFollowAction = async () => {
+    setShowFollowModal(false);
+    await handleFollow(true);
+  };
+
+  const handleUnfollowAction = async () => {
+    setShowFollowModal(false);
+    await handleUnfollow();
+  };
+  const canFollow = !isFollowing || followType === "silent";
+  const canSilentFollow = !isFollowing || followType === "follow";
 
   const displayPost =
     activeTabs === "post" ? userProfile?.posts : userProfile?.bookmarks;
   const isLoggedInUser =
     !!user && !!userProfile && user._id === userProfile._id;
-  const isFollowing = false;
-  if (!userProfile) {
+  if (profileLoading || !userProfile) {
     return <div className="text-center py-10">Loading profile...</div>;
   }
 
@@ -45,7 +156,6 @@ const Profile = () => {
       <div className="relative w-full h-40 bg-gradient-to-r from-blue-200 via-purple-200 to-pink-200 dark:from-blue-900 dark:via-purple-900 dark:to-pink-900 " />
 
       <div className="mt-[-70px] px-6 flex flex-col sm:flex-row sm:items-start sm:pl-[300px] sm:gap-8 items-center mb-1">
-        {/* Avatar and info */}
         <div className="flex flex-col items-center">
           <Avatar className="w-32 h-32 sm:w-40 sm:h-40 border-4 border-white dark:border-gray-900">
             <AvatarImage
@@ -95,12 +205,13 @@ const Profile = () => {
                   Ad tools
                 </Button>
               </>
-            ) : isFollowing ? (
+            ) : !isFollowing && followType === "" ? (
               <>
                 <Button
-                  variant="secondary"
+                  onClick={() => handleShowFollowModal()}
+                  disabled={loadingFollow}
                   className="text-sm hover:bg-purple-400 bg-purple-300 dark:bg-purple-900 dark:text-white hover:dark:bg-purple-950 h-8">
-                  Unfollow
+                  Follow
                 </Button>
                 <Button
                   variant="secondary"
@@ -109,11 +220,23 @@ const Profile = () => {
                 </Button>
               </>
             ) : (
-              <Button
-                variant="secondary"
-                className="text-sm hover:bg-purple-400 bg-purple-300 dark:bg-purple-900 dark:text-white hover:dark:bg-purple-950 h-8">
-                Follow
-              </Button>
+              <>
+                <Button
+                  onClick={() => handleShowFollowModal(followType)}
+                  disabled={loadingFollow}
+                  className="text-sm hover:bg-purple-400 bg-purple-300 dark:bg-purple-900 dark:text-white hover:dark:bg-purple-950 h-8">
+                  {loadingFollow
+                    ? "..."
+                    : followType === "silent"
+                    ? "Silent Following"
+                    : "Following"}
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="text-sm hover:bg-purple-400 bg-purple-300 dark:bg-purple-900 dark:text-white hover:dark:bg-purple-950 h-8">
+                  Message
+                </Button>
+              </>
             )}
           </div>
 
@@ -125,16 +248,14 @@ const Profile = () => {
               <p className="text-sm text-gray-500 dark:text-gray-400">Posts</p>
             </div>
             <div>
-              <p className="font-bold text-lg">
-                {userProfile?.followers?.length || 0}
-              </p>
+              <p className="font-bold text-lg">{followersCount}</p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Followers
               </p>
             </div>
             <div>
               <p className="font-bold text-lg">
-                {userProfile?.followings?.length || 0}
+                {userProfile?.following?.length || 0}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Followings
@@ -162,7 +283,7 @@ const Profile = () => {
             </div>
             <div>
               <p className="font-bold text-2xl">
-                {userProfile?.followings?.length || 0}
+                {userProfile?.following?.length || 0}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Followings
@@ -244,8 +365,14 @@ const Profile = () => {
           <CommentDialog open={open} setOpen={setOpen} post={selectedPost} />
         )}
       </div>
+      <FollowModal
+        isOpen={showFollowModal}
+        onClose={() => setShowFollowModal(false)}
+        onFollow={canFollow ? handleFollowAction : undefined}
+        onSilentFollow={canSilentFollow ? handleSilentFollowAction : undefined}
+        onUnfollow={isFollowing ? handleUnfollowAction : undefined}
+      />
     </div>
   );
 };
-
 export default Profile;
