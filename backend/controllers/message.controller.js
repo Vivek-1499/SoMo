@@ -144,7 +144,7 @@ export const getGroupMessages = async (req, res) => {
 
     const conversation = await Conversation.findById(conversationId).populate({
       path: "messages",
-      populate: { path: "senderId", select: "username" },
+      populate: { path: "senderId", select: "username _id" },
     });
 
     if (!conversation || !conversation.isGroup)
@@ -238,5 +238,117 @@ export const renameGroup = async (req, res) => {
     return res.status(200).json({ success: true, conversation });
   } catch (error) {
     return res.status(500).json({ success: false, error: error.message });
+  }
+};
+export const getChatPreviews = async (req, res) => {
+  try {
+    const userId = req.id;
+
+    const conversations = await Conversation.find({
+      participants: userId,
+    })
+      .populate("participants")
+      .sort({ updatedAt: -1 });
+
+    const previews = await Promise.all(
+      conversations.map(async (conv) => {
+        const lastMessage = await Message.findOne({ conversationId: conv._id })
+          .sort({ createdAt: -1 })
+          .lean();
+
+        const status =
+          lastMessage?.senderId.toString() === userId
+            ? lastMessage?.seenBy?.includes(userId)
+              ? "seen"
+              : "sent"
+            : lastMessage?.seenBy?.includes(userId)
+            ? "seen"
+            : "unread";
+
+        let unreadCount = 0;
+        if (lastMessage && lastMessage.senderId.toString() !== userId) {
+          unreadCount = await Message.countDocuments({
+            conversationId: conv._id,
+            senderId: { $ne: userId },
+            seenBy: { $ne: userId },
+          });
+        }
+
+        // For group chats
+        if (conv.isGroup) {
+          return {
+            group: {
+              _id: conv._id,
+              name: conv.name,
+              profilePicture: "/group-avatar.png", // or conv.groupImage if available
+              isGroup: true,
+            },
+            lastMessage: lastMessage
+              ? {
+                  ...lastMessage,
+                  status,
+                  unreadCount,
+                }
+              : null,
+          };
+        }
+
+        // For one-on-one chats
+        const otherUser = conv.participants.find(
+          (p) => p._id.toString() !== userId
+        );
+
+        return {
+          user: {
+            _id: otherUser._id,
+            username: otherUser.username,
+            profilePicture: otherUser.profilePicture,
+          },
+          lastMessage: lastMessage
+            ? {
+                ...lastMessage,
+                status,
+                unreadCount,
+              }
+            : null,
+        };
+      })
+    );
+
+    const filtered = previews.filter(Boolean).sort((a, b) => {
+      const aTime = a?.lastMessage?.createdAt
+        ? new Date(a.lastMessage.createdAt)
+        : new Date(0); // fallback to oldest
+      const bTime = b?.lastMessage?.createdAt
+        ? new Date(b.lastMessage.createdAt)
+        : new Date(0);
+      return bTime - aTime;
+    });
+
+    return res.status(200).json({ success: true, previews: filtered });
+  } catch (err) {
+    console.error("🔥 getChatPreviews error:", err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+export const markMessagesAsSeen = async (req, res) => {
+  try {
+    const receiverId = req.id;
+    const senderId = req.params.userId;
+
+    await Message.updateMany(
+      {
+        senderId,
+        receiverId,
+        seenBy: { $ne: receiverId },
+      },
+      { $push: { seenBy: receiverId } }
+    );
+
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    console.error("🔥 Seen update error:", err);
+    return res.status(500).json({ success: false });
   }
 };

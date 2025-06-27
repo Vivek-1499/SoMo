@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
-import useGetUserProfile from "@/hooks/useGetUserProfile";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { Button } from "./ui/button";
 import { Heart } from "lucide-react";
@@ -25,6 +24,7 @@ const Profile = () => {
   const [followType, setFollowType] = useState("");
   const { userProfile, user } = useSelector((store) => store.auth);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -214,6 +214,7 @@ const Profile = () => {
                   Follow
                 </Button>
                 <Button
+                onClick={() => navigate(`/chat/${userProfile._id}`)}
                   variant="secondary"
                   className="text-sm hover:bg-purple-400 bg-purple-300 dark:bg-purple-900 dark:text-white hover:dark:bg-purple-950 h-8">
                   Message

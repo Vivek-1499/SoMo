@@ -69,6 +69,10 @@ const browserRouter = createBrowserRouter([
         path: "/notifications",
         element: <NotificationsPage />,
       },
+      {
+        path:"/chat/:userId",
+        element: <ChatPage/>
+      },
     ],
   },
 ]);

@@ -2,9 +2,11 @@ import React, { useEffect, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import useGetAllMessage from "@/hooks/useGetAllMessage";
 import useGetRTM from "@/hooks/useGetRTM";
+import axios from "axios";
+import { setChatPreviews, setMessages } from "@/redux/chatSlice";
 
 const Messages = ({ selectedUser }) => {
   useGetRTM();
@@ -12,13 +14,61 @@ const Messages = ({ selectedUser }) => {
   const { messages } = useSelector((store) => store.chat);
   const { user } = useSelector((store) => store.auth);
   const scrollContainerRef = useRef(null);
-
+  const dispatch = useDispatch();
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (container) {
       container.scrollTop = container.scrollHeight;
     }
   }, [messages]);
+  useEffect(() => {
+    const markSeenAndRefresh = async () => {
+      try {
+        await axios.put(
+          `http://localhost:8000/api/v2/message/seen/${selectedUser._id}`,
+          {},
+          { withCredentials: true }
+        );
+
+        const res = await axios.get(
+          "http://localhost:8000/api/v2/message/previews",
+          { withCredentials: true }
+        );
+
+        if (res.data.success) {
+          dispatch(setChatPreviews(res.data.previews));
+        }
+      } catch (e) {
+        console.log("❌ Failed to mark messages as seen", e);
+      }
+    };
+
+    if (selectedUser?._id) {
+      markSeenAndRefresh();
+    }
+  }, [selectedUser]);
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (!selectedUser?._id) return;
+
+      const url = selectedUser.isGroup
+        ? `http://localhost:8000/api/v2/message/group/${selectedUser._id}`
+        : `http://localhost:8000/api/v2/message/${selectedUser._id}`;
+
+      try {
+        const res = await axios.get(url, { withCredentials: true });
+        if (res.data.success) {
+          dispatch(setMessages(res.data.messages));
+        }
+      } catch (err) {
+        console.error("❌ Error fetching messages:", err);
+      }
+    };
+
+    fetchMessages();
+  }, [selectedUser?._id, selectedUser?.isGroup]);
+
   return (
     <div ref={scrollContainerRef} className="overflow-y-auto flex-1 p-4">
       <div className="flex justify-center">
@@ -26,17 +76,27 @@ const Messages = ({ selectedUser }) => {
           <Avatar className="h-28 w-28 mb-2">
             <AvatarImage
               className="object-cover"
-              src={selectedUser?.profilePicture}
-              alt="profile inage"
+              src={selectedUser?.profilePicture || "/group-avatar.png"}
+              alt="profile image"
             />
             <AvatarFallback className="bg-gray-300 dark:bg-gray-700 text-black dark:text-white">
-              U
+              {selectedUser?.isGroup ? selectedUser?.name?.[0] : "U"}
             </AvatarFallback>
           </Avatar>
-          <span className="text-lg font-bold">{selectedUser?.username}</span>
-          <Link to={`/profile/${selectedUser?._id}`}>
-            <Button className="text-xs">View Profile</Button>
-          </Link>
+
+          <span className="text-lg font-bold">
+            {selectedUser?.isGroup ? selectedUser.name : selectedUser?.username}
+          </span>
+
+          {selectedUser?.isGroup ? (
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              Group Chat
+            </span>
+          ) : (
+            <Link to={`/profile/${selectedUser?._id}`}>
+              <Button className="text-xs">View Profile</Button>
+            </Link>
+          )}
         </div>
       </div>
       <div className="flex flex-col gap-3">
