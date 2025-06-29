@@ -2,6 +2,7 @@ import axios from "axios";
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { api } from "./utils/api";
 
 const SignUp = () => {
   const [input, setInput] = useState({
@@ -19,14 +20,7 @@ const SignUp = () => {
     e.preventDefault();
     try {
       setLoading(true);
-      const res = await axios.post(
-        "http://localhost:8000/api/v2/user/register",
-        input,
-        {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true,
-        }
-      );
+      const res = await api.post("/user/register", input);
       if (res.data.success) {
         toast.success(res.data.message);
         navigate("/");

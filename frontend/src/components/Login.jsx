@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setAuthUser } from "@/redux/authSlice";
+import { api } from "./utils/api";
 
 const Login = () => {
   const [input, setInput] = useState({ identifier: "", password: "" });
@@ -18,14 +19,7 @@ const Login = () => {
     e.preventDefault();
     try {
       setLoading(true);
-      const res = await axios.post(
-        "http://localhost:8000/api/v2/user/login",
-        input,
-        {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true,
-        }
-      );
+      const res = await api.post("/user/login", input);
       if (res.data.success) {
         dispatch(setAuthUser(res.data.user))
         toast.success(res.data.message);
