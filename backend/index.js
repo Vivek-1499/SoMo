@@ -25,7 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 
 const allowedOrigins = [
   "http://localhost:5173",                      // for local dev
-  "https://your-frontend.vercel.app"           // for production - replace with actual Vercel domain
+  "https://somo-two.vercel.app"           // for production
 ];
 
 
