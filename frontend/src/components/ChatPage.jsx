@@ -6,9 +6,9 @@ import { MessageCircleCode } from "lucide-react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import Messages from "./Messages";
-import axios from "axios";
 import { setChatPreviews, setMessages } from "@/redux/chatSlice";
 import { formatDistanceToNow } from "date-fns";
+import { api } from "./utils/api";
 
 const ChatPage = () => {
   const [textMessage, setTextMessage] = useState("");
@@ -31,24 +31,22 @@ const ChatPage = () => {
 
     const isGroup = selectedUser?.isGroup;
     const endpoint = isGroup
-      ? "http://localhost:8000/api/v2/message/group/send"
-      : `http://localhost:8000/api/v2/message/send/${selectedUser._id}`;
+      ? "/message/group/send"
+      : `/message/send/${selectedUser._id}`;
 
     const payload = isGroup
       ? { message: textMessage, conversationId: selectedUser._id }
       : { message: textMessage };
 
     try {
-      const res = await axios.post(endpoint, payload, {
-        withCredentials: true,
-      });
+      const res = await api.post(endpoint, payload);
 
       if (res.data.success) {
         dispatch(setMessages([...messages, res.data.newMessage]));
         setTextMessage("");
       }
     } catch (error) {
-      console.error("🔥 Message send error:", error);
+      console.error("Message send error:", error);
     }
   };
 
@@ -56,21 +54,13 @@ const ChatPage = () => {
     const markMessagesAsSeen = async () => {
       if (!selectedUser?._id) return;
       try {
-        await axios.put(
-          `http://localhost:8000/api/v2/message/seen/${selectedUser._id}`,
-          {},
-          { withCredentials: true }
-        );
-        // Refetch chat previews to update unread count
-        const res = await axios.get(
-          "http://localhost:8000/api/v2/message/previews",
-          { withCredentials: true }
-        );
+        await api.put(`/message/seen/${selectedUser._id}`, {});
+        const res = await api.get("/message/previews");
         if (res.data.success) {
           dispatch(setChatPreviews(res.data.previews));
         }
       } catch (err) {
-        console.error("❌ Error marking messages as seen:", err);
+        console.error("Error marking messages as seen:", err);
       }
     };
 
@@ -88,21 +78,13 @@ const ChatPage = () => {
   useEffect(() => {
     const fetchPreviews = async () => {
       try {
-        const res = await axios.get(
-          "http://localhost:8000/api/v2/message/previews",
-          {
-            withCredentials: true,
-          }
-        );
+        const res = await api.get("/message/previews");
 
         if (res.data.success) {
-          console.log("✅ Chat previews received:", res.data.previews);
           dispatch(setChatPreviews(res.data.previews));
-        } else {
-          console.warn("⚠️ Chat previews not successful:", res.data);
         }
       } catch (err) {
-        console.error("❌ Preview fetch error:", err);
+        console.error("Preview fetch error:", err);
       }
     };
 
@@ -248,31 +230,22 @@ const ChatPage = () => {
                 disabled={!groupName.trim() || selectedMembers.length === 0}
                 onClick={async () => {
                   try {
-                    const res = await axios.post(
-                      "http://localhost:8000/api/v2/message/group/create",
-                      {
-                        name: groupName,
-                        participantIds: selectedMembers,
-                      },
-                      {
-                        withCredentials: true,
-                      }
-                    );
+                    const res = await api.post("/message/group/create", {
+                      name: groupName,
+                      participantIds: selectedMembers,
+                    });
                     if (res.data.success) {
                       setShowGroupModal(false);
                       setGroupName("");
                       setSelectedMembers([]);
                       // Refresh previews
-                      const refreshed = await axios.get(
-                        "http://localhost:8000/api/v2/message/previews",
-                        { withCredentials: true }
-                      );
+                      const refreshed = await api.get("/message/previews");
                       if (refreshed.data.success) {
                         dispatch(setChatPreviews(refreshed.data.previews));
                       }
                     }
                   } catch (err) {
-                    console.error("🔥 Error creating group:", err);
+                    console.error("Error creating group:", err);
                   }
                 }}
                 className="bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-50">

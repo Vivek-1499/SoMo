@@ -7,9 +7,9 @@ import { FaBookmark, FaHeart, FaRegBookmark, FaRegHeart } from "react-icons/fa";
 import CommentDialog from "./CommentDialog";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
-import axios from "axios";
 import { setPosts, setSelectedPost } from "@/redux/postSlice";
 import { setAuthUser } from "@/redux/authSlice";
+import { api } from "./utils/api";
 
 const Post = ({ post }) => {
   const [open, setOpen] = useState(false);
@@ -24,12 +24,13 @@ const Post = ({ post }) => {
   const isBookmarked = user?.bookmarks?.includes(post._id);
 
   useEffect(() => {
-  if (user?.bookmarks) {
-    const isMarked = user.bookmarks?.some((id) => id.toString() === post._id.toString())
-    setBookmarked(isMarked);
-  }
-}, [user.bookmarks, post._id]);
-
+    if (user?.bookmarks) {
+      const isMarked = user.bookmarks?.some(
+        (id) => id.toString() === post._id.toString()
+      );
+      setBookmarked(isMarked);
+    }
+  }, [user.bookmarks, post._id]);
 
   const dispatch = useDispatch();
   const changeEventHandler = (e) => {
@@ -39,10 +40,7 @@ const Post = ({ post }) => {
 
   const deletePostHandler = async () => {
     try {
-      const res = await axios.delete(
-        `http://localhost:8000/api/v2/post/delete/${post?._id}`,
-        { withCredentials: true }
-      );
+      const res = await api.delete(`/post/delete/${post?._id}`);
       if (res.data?.success) {
         const updatedPostData = posts.filter((p) => p._id !== post._id);
         dispatch(setPosts(updatedPostData));
@@ -60,10 +58,7 @@ const Post = ({ post }) => {
     setLoading(true);
     try {
       const action = liked ? "unlike" : "like";
-      const res = await axios.get(
-        `http://localhost:8000/api/v2/post/${post._id}/${action}`,
-        { withCredentials: true }
-      );
+      const res = await api.get(`/post/${post._id}/${action}`);
 
       if (res.data.success) {
         const updatedLike = liked ? postLike - 1 : postLike + 1;
@@ -94,14 +89,7 @@ const Post = ({ post }) => {
 
   const commentHandler = async () => {
     try {
-      const res = await axios.post(
-        `http://localhost:8000/api/v2/post/${post?._id}/comment`,
-        { text },
-        {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true,
-        }
-      );
+      const res = await api.post(`/post/${post?._id}/comment`, { text });
       if (res.data.success) {
         const newComment = {
           ...res.data.comment,
@@ -126,30 +114,22 @@ const Post = ({ post }) => {
   };
 
   const bookmarkHandler = async () => {
-  try {
-    const res = await axios.get(
-      `http://localhost:8000/api/v2/post/${post?._id}/bookmark`,
-      { withCredentials: true }
-    );
-    if (res.data.success) {
-      toast.success(res.data.message);
+    try {
+      const res = await api.get(`/post/${post?._id}/bookmark`);
+      if (res.data.success) {
+        toast.success(res.data.message);
+        setBookmarked((prev) => !prev);
 
-      // Optimistically toggle local UI
-      setBookmarked((prev) => !prev);
+        const userRes = await api.get("/user/profile");
 
-      const userRes = await axios.get("http://localhost:8000/api/v2/user/profile", {
-        withCredentials: true,
-      });
-
-      if (userRes.data.success) {
-        dispatch(setAuthUser(userRes.data.user));
+        if (userRes.data.success) {
+          dispatch(setAuthUser(userRes.data.user));
+        }
       }
+    } catch (error) {
+      console.log(error);
     }
-  } catch (error) {
-    console.log(error);
-  }
-};
-
+  };
 
   return (
     <div className="my-5 w-full max-w-md mx-auto rounded-xl shadow-sm bg-white dark:bg-gray-900 p-3 sm:p-4 transition-colors">
@@ -172,12 +152,11 @@ const Post = ({ post }) => {
             <MoreHorizontal className="cursor-pointer text-gray-500 hover:text-gray-800 dark:hover:text-white" />
           </DialogTrigger>
           <DialogContent className="bg-white dark:bg-zinc-900 rounded-xl w-full sm:max-w-lg p-4 space-y-4 max-h-[90vh] overflow-y-auto">
-            {
-              post?.author?._id !== user?._id &&
-            <Button variant="ghost" className="text-red-500">
-              Unfollow
-            </Button>
-            }
+            {post?.author?._id !== user?._id && (
+              <Button variant="ghost" className="text-red-500">
+                Unfollow
+              </Button>
+            )}
             <Button variant="ghost" className="dark:text-gray-300">
               Add to Favourite
             </Button>

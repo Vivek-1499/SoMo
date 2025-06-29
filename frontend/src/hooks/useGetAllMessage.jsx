@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { setMessages, clearMessages } from '@/redux/chatSlice';
-import axios from 'axios';
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { setMessages, clearMessages } from "@/redux/chatSlice";
+import { api } from "@/components/utils/api";
 
 const useGetAllMessage = () => {
   const { selectedUser } = useSelector((store) => store.auth);
@@ -16,11 +16,7 @@ const useGetAllMessage = () => {
       setLoading(true);
 
       try {
-        const res = await axios.post(
-          `http://localhost:8000/api/v2/message/all/${selectedUser._id}`,
-          {},
-          { withCredentials: true }
-        );
+        const res = await api.post(`/message/all/${selectedUser._id}`);
         if (res.data.success) {
           dispatch(setMessages(res.data.messages));
         }

@@ -10,7 +10,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Popover, PopoverTrigger, PopoverContent } from "./ui/popover";
 import { toast } from "sonner";
-import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setAuthUser } from "@/redux/authSlice";
@@ -18,6 +17,7 @@ import { useState, useEffect } from "react";
 import CreatePost from "./CreatePost";
 import SuggestedUsers from "./SuggestedUsers";
 import { markNotificationsAsSeen } from "@/redux/rtnSlice";
+import { api } from "./utils/api";
 
 const LeftSideBar = () => {
   const navigate = useNavigate();
@@ -51,9 +51,7 @@ const LeftSideBar = () => {
 
   const logoutHandler = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/v2/user/logout", {
-        withCredentials: true,
-      });
+      const res = await api.get("/user/logout")
       if (res.data.success) {
         dispatch(setAuthUser(null));
         navigate("/auth");

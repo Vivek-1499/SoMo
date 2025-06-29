@@ -7,11 +7,11 @@ import { Button } from "./ui/button";
 import { readFileAsDataURL } from "@/lib/utils";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
-import axios from "axios";
 import { setPosts } from "@/redux/postSlice";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "./utils/getCroppedImage";
 import { ImEmbed } from "react-icons/im";
+import { api } from "./utils/api";
 
 const CreatePost = ({ open, setOpen }) => {
   const { user } = useSelector((store) => store.auth);
@@ -93,14 +93,7 @@ const CreatePost = ({ open, setOpen }) => {
       formData.append("caption", caption);
       formData.append("image", croppedBlob, file.name);
 
-      const res = await axios.post(
-        "http://localhost:8000/api/v2/post/addpost",
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-          withCredentials: true,
-        }
-      );
+      const res = await api.post("/post/addpost", formData);
 
       if (res.data.success) {
         dispatch(setPosts([res.data.post, ...posts]));

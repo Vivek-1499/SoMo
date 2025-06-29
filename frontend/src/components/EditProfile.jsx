@@ -12,9 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import axios from "axios";
 import { Loader2 } from "lucide-react";
 import { setAuthUser } from "@/redux/authSlice";
+import { api } from "./utils/api";
 
 const EditProfile = () => {
   const imageRef = useRef();
@@ -47,10 +47,9 @@ const EditProfile = () => {
     const check = setTimeout(() => {
       if (input.username && input.username !== user.username) {
         setCheckingUsername(true);
-        axios
-          .get(`http://localhost:8000/api/v2/user/check-username`, {
+        api
+          .get("/user/check-username", {
             params: { username: input.username },
-            withCredentials: true,
           })
           .then((res) => {
             setUsernameAvailable(!res.data.isTaken);
@@ -64,9 +63,10 @@ const EditProfile = () => {
     return () => clearTimeout(check);
   }, [input.username]);
 
-  const profilePicPreview = input.profilePicture instanceof File
-  ? URL.createObjectURL(input.profilePicture)
-  : input.profilePicture;
+  const profilePicPreview =
+    input.profilePicture instanceof File
+      ? URL.createObjectURL(input.profilePicture)
+      : input.profilePicture;
 
   const editProfileHandler = async () => {
     const formData = new FormData();
@@ -80,14 +80,7 @@ const EditProfile = () => {
 
     try {
       setLoading(true);
-      const res = await axios.post(
-        "http://localhost:8000/api/v2/user/profile/edit",
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-          withCredentials: true,
-        }
-      );
+      const res = await api.post("/user/profile/edit", formData);
 
       if (res.data.success) {
         const updatedUserData = {
@@ -122,7 +115,6 @@ const EditProfile = () => {
         <div className="flex flex-col items-center gap-4 sm:border-r-2 rounded-sm border-purple-950">
           <Avatar className="w-44 h-44">
             <AvatarImage
-
               src={profilePicPreview}
               alt="User avatar"
               className="object-cover"
@@ -139,7 +131,6 @@ const EditProfile = () => {
             className="hidden"
           />
           <Button
-         
             onClick={() => imageRef?.current.click()}
             className="text-sm bg-purple-500 hover:bg-purple-600 dark:bg-indigo-700 dark:hover:bg-indigo-800 text-white">
             Change Profile Picture
@@ -184,20 +175,19 @@ const EditProfile = () => {
               value={input.username}
               onChange={(e) => setInput({ ...input, username: e.target.value })}
             />
-            {
-            !usernameAvailable && (
+            {!usernameAvailable && (
               <p className="text-red-600 dark:text-red-400 text-sm mt-1">
                 Username is already taken
               </p>
             )}
-            {usernameAvailable && input.username && input.username !== user.username && (
-  <p className="text-green-600 dark:text-green-400 text-sm mt-1">
-    ✅ Username is available
-  </p>
-)}
-
+            {usernameAvailable &&
+              input.username &&
+              input.username !== user.username && (
+                <p className="text-green-600 dark:text-green-400 text-sm mt-1">
+                  ✅ Username is available
+                </p>
+              )}
           </div>
-
 
           <div>
             <label className="block text-sm font-medium mb-1">Gender</label>
@@ -236,8 +226,8 @@ const EditProfile = () => {
               </Button>
             ) : (
               <Button
-              onClick={() => setConfirmDialogOpen(true)}
-               disabled={checkingUsername || loading}
+                onClick={() => setConfirmDialogOpen(true)}
+                disabled={checkingUsername || loading}
                 className="  bg-purple-600 hover:bg-purple-700 text-white">
                 Save Changes
               </Button>
@@ -246,35 +236,32 @@ const EditProfile = () => {
         </div>
       </div>
       {confirmDialogOpen && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-sm w-full text-center space-y-4">
-      <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
-        Are you sure?
-      </h2>
-      <p className="text-sm text-gray-600 dark:text-gray-300">
-        Are you sure you want to update your profile?
-      </p>
-      <div className="flex justify-center gap-4 pt-2">
-        <Button
-          onClick={() => {
-            setConfirmDialogOpen(false);
-            editProfileHandler();
-          }}
-          className="bg-purple-600 hover:bg-purple-700 text-white"
-        >
-          Yes, Save
-        </Button>
-        <Button
-          onClick={() => setConfirmDialogOpen(false)}
-          className="bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white"
-        >
-          Cancel
-        </Button>
-      </div>
-    </div>
-  </div>
-)}
-
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-sm w-full text-center space-y-4">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
+              Are you sure?
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              Are you sure you want to update your profile?
+            </p>
+            <div className="flex justify-center gap-4 pt-2">
+              <Button
+                onClick={() => {
+                  setConfirmDialogOpen(false);
+                  editProfileHandler();
+                }}
+                className="bg-purple-600 hover:bg-purple-700 text-white">
+                Yes, Save
+              </Button>
+              <Button
+                onClick={() => setConfirmDialogOpen(false)}
+                className="bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

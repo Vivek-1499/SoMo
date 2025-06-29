@@ -7,9 +7,9 @@ import { Heart } from "lucide-react";
 import { FaComment } from "react-icons/fa";
 import CommentDialog from "./CommentDialog";
 import { toast } from "sonner";
-import axios from "axios";
 import { setUserProfile } from "@/redux/authSlice";
 import FollowModal from "./FollowModal";
+import { api } from "./utils/api";
 
 const Profile = () => {
   const { id: userId } = useParams();
@@ -32,13 +32,9 @@ const Profile = () => {
 
       setProfileLoading(true);
       try {
-        const res = await axios.get(
-          `http://localhost:8000/api/v2/user/${userId}/profile`,
-          { withCredentials: true }
-        );
+        const res = await api.get(`/user/${userId}/profile`);
         if (res.data.success && res.data.user) {
           dispatch(setUserProfile(res.data.user));
-          // ✅ Use backend-provided followType directly
           setIsFollowing(!!res.data.followType);
           setFollowType(res.data.followType || "");
           setFollowersCount(res.data.user.followers?.length || 0);
@@ -64,10 +60,7 @@ const Profile = () => {
 
   const refreshProfile = async (currentUserId = user?._id) => {
     try {
-      const res = await axios.get(
-        `http://localhost:8000/api/v2/user/${userId}/profile`,
-        { withCredentials: true }
-      );
+      const res = await api.get(`/user/${userId}/profile`);
       if (res.data.success) {
         dispatch(setUserProfile(res.data.user));
         setIsFollowing(!!res.data.followType);
@@ -83,10 +76,11 @@ const Profile = () => {
     if (!userProfile?._id) return;
     setLoadingFollow(true);
     try {
-      const res = await axios.post(
-        `http://localhost:8000/api/v2/user/followUnfollowUser/${userProfile._id}`,
-        { action: silent ? "silent" : "follow" }, // ✅ FIXED
-        { withCredentials: true }
+      const res = await api.post(
+        `/user/followUnfollowUser/${userProfile._id}`,
+        {
+          action: silent ? "silent" : "follow",
+        }
       );
       if (res.data.success) {
         toast.success(silent ? "Silently followed!" : "Followed!");
@@ -104,10 +98,11 @@ const Profile = () => {
   const handleUnfollow = async () => {
     setLoadingFollow(true);
     try {
-      const res = await axios.post(
-        `http://localhost:8000/api/v2/user/followUnfollowUser/${userProfile._id}`,
-        { action: "unfollow" }, // ✅ send action explicitly
-        { withCredentials: true }
+      const res = await api.post(
+        `/user/followUnfollowUser/${userProfile._id}`,
+        {
+          action: "unfollow",
+        }
       );
       if (res.data.success) {
         toast.success("Unfollowed!");
@@ -214,7 +209,7 @@ const Profile = () => {
                   Follow
                 </Button>
                 <Button
-                onClick={() => navigate(`/chat/${userProfile._id}`)}
+                  onClick={() => navigate(`/chat/${userProfile._id}`)}
                   variant="secondary"
                   className="text-sm hover:bg-purple-400 bg-purple-300 dark:bg-purple-900 dark:text-white hover:dark:bg-purple-950 h-8">
                   Message

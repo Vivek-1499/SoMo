@@ -18,6 +18,7 @@ import { setOnlineUsers } from "./redux/chatSlice";
 import { setCommentNotification, setLikeNotification } from "./redux/rtnSlice";
 import ProtectedRoutes from "./components/ProtectedRoutes";
 import NotificationsPage from "./components/NotificationsPage";
+import { api } from "./components/utils/api";
 
 const browserRouter = createBrowserRouter([
   {
@@ -117,12 +118,7 @@ function App() {
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        const res = await axios.get(
-          "http://localhost:8000/api/v2/user/profile",
-          {
-            withCredentials: true,
-          }
-        );
+        const res = await api.get("/user/profile");
         if (res.data.success) {
           dispatch(setAuthUser(res.data.user)); // includes bookmarks
         }

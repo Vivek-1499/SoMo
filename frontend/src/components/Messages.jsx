@@ -5,8 +5,8 @@ import { Button } from "./ui/button";
 import { useDispatch, useSelector } from "react-redux";
 import useGetAllMessage from "@/hooks/useGetAllMessage";
 import useGetRTM from "@/hooks/useGetRTM";
-import axios from "axios";
 import { setChatPreviews, setMessages } from "@/redux/chatSlice";
+import { api } from "./utils/api";
 
 const Messages = ({ selectedUser }) => {
   useGetRTM();
@@ -24,22 +24,14 @@ const Messages = ({ selectedUser }) => {
   useEffect(() => {
     const markSeenAndRefresh = async () => {
       try {
-        await axios.put(
-          `http://localhost:8000/api/v2/message/seen/${selectedUser._id}`,
-          {},
-          { withCredentials: true }
-        );
+        await api.put(`/message/seen/${selectedUser._id}`);
 
-        const res = await axios.get(
-          "http://localhost:8000/api/v2/message/previews",
-          { withCredentials: true }
-        );
-
+        const res = await api.get("/message/previews");
         if (res.data.success) {
           dispatch(setChatPreviews(res.data.previews));
         }
       } catch (e) {
-        console.log("❌ Failed to mark messages as seen", e);
+        console.log("Failed to mark messages as seen", e);
       }
     };
 
@@ -53,16 +45,16 @@ const Messages = ({ selectedUser }) => {
       if (!selectedUser?._id) return;
 
       const url = selectedUser.isGroup
-        ? `http://localhost:8000/api/v2/message/group/${selectedUser._id}`
-        : `http://localhost:8000/api/v2/message/${selectedUser._id}`;
+        ? `/message/group/${selectedUser._id}`
+        : `/message/${selectedUser._id}`;
 
       try {
-        const res = await axios.get(url, { withCredentials: true });
+        const res = await api.get(url);
         if (res.data.success) {
           dispatch(setMessages(res.data.messages));
         }
       } catch (err) {
-        console.error("❌ Error fetching messages:", err);
+        console.error("Error fetching messages:", err);
       }
     };
 

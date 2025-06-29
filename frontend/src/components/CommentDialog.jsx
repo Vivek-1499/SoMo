@@ -6,9 +6,9 @@ import { MoreHorizontal } from "lucide-react";
 import { Button } from "./ui/button";
 import { useDispatch, useSelector } from "react-redux";
 import Comment from "./Comment";
-import axios from "axios";
 import { toast } from "sonner";
 import { setPosts, setSelectedPost } from "@/redux/postSlice";
+import { api } from "./utils/api";
 
 const CommentDialog = ({ open, setOpen, post }) => {
   const [text, setText] = useState("");
@@ -30,14 +30,9 @@ const CommentDialog = ({ open, setOpen, post }) => {
 
   const sendMessageHandler = async () => {
     try {
-      const res = await axios.post(
-        `http://localhost:8000/api/v2/post/${selectedPost?._id}/comment`,
-        { text },
-        {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true,
-        }
-      );
+      const res = await api.post(`/post/${selectedPost?._id}/comment`, {
+        text,
+      });
       if (res.data.success) {
         const newComment = {
           ...res.data.comment,
@@ -51,7 +46,9 @@ const CommentDialog = ({ open, setOpen, post }) => {
             ? { ...p, comments: updatedCommentData }
             : p
         );
-        dispatch(setSelectedPost({ ...selectedPost, comments: updatedCommentData }));
+        dispatch(
+          setSelectedPost({ ...selectedPost, comments: updatedCommentData })
+        );
         toast.success(res.data.message);
         setText("");
       }
