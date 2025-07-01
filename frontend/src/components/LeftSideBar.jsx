@@ -18,6 +18,7 @@ import CreatePost from "./CreatePost";
 import SuggestedUsers from "./SuggestedUsers";
 import { markNotificationsAsSeen } from "@/redux/rtnSlice";
 import { api } from "./utils/api";
+import { useLocation } from "react-router-dom";
 
 const LeftSideBar = () => {
   const navigate = useNavigate();
@@ -34,6 +35,7 @@ const LeftSideBar = () => {
     (store) => store.realTimeNotification
   );
   const unseenCount = notifications.filter((n) => !n.seen).length;
+  const location = useLocation();
 
   useEffect(() => {
     const handleResize = () => {
